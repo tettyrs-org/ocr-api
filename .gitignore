@@ -45,6 +45,7 @@ key_base64.txt
 .env
 .env.local
 .env.*.local
+.env.docker
 application-dev.yaml
 
 ### Kubernetes & Deployment ###
