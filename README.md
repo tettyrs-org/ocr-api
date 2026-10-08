@@ -1,6 +1,6 @@
 # OCR API
 
-A production-ready REST API for document processing that orchestrates OCR extraction and AI-powered document classification. Built on Quarkus 3.9.4 LTS and PostgreSQL 18, this service provides a complete workflow for ingesting documents, extracting text content, classifying document types, and maintaining comprehensive audit trails.
+A REST API for document processing that orchestrates OCR extraction and AI-powered document classification. Built on Quarkus 3.9.4 LTS and PostgreSQL 18, this service provides a complete workflow for ingesting documents, extracting text content, classifying document types, and maintaining comprehensive audit trails.
 
 The API is designed to be part of the Tettyrs document processing pipeline, working alongside [ocr-engine](https://github.com/tettyrs-org/ocr-engine) (Python-based text extraction) and [ms-ocr](https://github.com/tettyrs-org/ms-ocr) (Java correction engine) to provide end-to-end document intelligence.
 
