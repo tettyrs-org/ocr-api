@@ -1,0 +1,93 @@
+quarkus:
+  application:
+    name: ocr-api
+    version: 1.0.0
+
+  http:
+    port: 8080
+    host: 0.0.0.0
+
+  redis:
+    hosts: redis://${REDIS_HOST:localhost}:${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: ${REDIS_DB:0}
+    timeout: 60000
+    max-pool-size: 20
+
+  log:
+    level: INFO
+    category:
+      "org.tettyrs": DEBUG
+      "io.quarkus": INFO
+      "io.vertx": WARN
+    console:
+      format: "%d{HH:mm:ss.SSS} %-5p [%c{2.}] %s%e%n"
+      json: false
+
+  datasource:
+    db-kind: postgresql
+    jdbc:
+      url: "jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"
+      driver: org.postgresql.Driver
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    min-size: 5
+    max-size: 20
+
+  hibernate-orm:
+    database:
+      generation: update
+    log:
+      sql: false
+
+  flyway:
+    migrate-at-start: true
+    locations: classpath:db/migration
+
+  cache:
+    type: caffeine
+
+  s3:
+    endpoint-override: ${S3_ENDPOINT}
+    path-style-access: true
+    aws:
+      region: ${AWS_REGION}
+      credentials:
+        type: static
+        static-provider:
+          access-key-id: ${AWS_ACCESS_KEY_ID}
+          secret-access-key: ${AWS_SECRET_ACCESS_KEY}
+
+  smallrye-health:
+    root-path: /q/health
+    liveness-path: /live
+    readiness-path: /ready
+
+  micrometer:
+    export:
+      prometheus:
+        enabled: true
+
+jwt:
+  private-key-location: ${JWT_PRIVATE_KEY_LOCATION:classpath:privateKey.pem}
+  public-key-location: ${JWT_PUBLIC_KEY_LOCATION:classpath:publicKey.pem}
+
+tettyrs:
+  s3:
+    bucket: ${S3_BUCKET}
+    file-expiry-days: 7
+    max-file-size-mb: 25
+    max-pdf-pages: 15
+
+  api:
+    rate-limit:
+      upload-per-hour: 20
+      reprocess-per-hour: 5
+      telemetry-per-hour: 30
+    poll-after-ms: 2000
+    max-concurrent-uploads: 10
+
+  async:
+    ocr-timeout-seconds: 120
+    llm-timeout-seconds: 60
+    thread-pool-size: 20
