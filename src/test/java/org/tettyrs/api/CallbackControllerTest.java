@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.tettyrs.service.EnhancedJwtValidator;
 import jakarta.inject.Inject;
 import java.util.Arrays;
+import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -19,7 +20,7 @@ class CallbackControllerTest {
     EnhancedJwtValidator jwtValidator;
 
     private String adminToken;
-    private Long testDocumentId = 1L;
+    private UUID testDocumentId = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
 
     @BeforeEach
     void setup() {

@@ -2,23 +2,102 @@
 
 ## Local Development (Docker Compose)
 
-### Setup
+### Full Stack Setup (Recommended)
+
+The project includes a complete docker-compose.yml at the root that orchestrates 6 services:
+
 ```bash
-# Copy environment template
-cp .env.example .env
+cd /path/to/Projects/OCR
 
-# Edit .env dengan development values
-nano .env
+# Start complete stack
+docker-compose --env-file .env up -d
 
-# Start services
-docker-compose up -d
+# Verify all services are healthy
+docker ps -a --format "table {{.Names}}\t{{.Status}}"
 
-# Check logs
-docker-compose logs -f api
+# Expected output:
+# NAMES          STATUS
+# ocr-api        Up X minutes (healthy)
+# ms-ocr         Up X minutes (healthy)
+# ocr-redis      Up X minutes (healthy)
+# ocr-minio      Up X minutes (healthy)
+# ocr-engine     Up X minutes (healthy)
+# ocr-postgres   Up X minutes (healthy)
 ```
 
-### Environment Variables
-See `.env.example` for all available variables.
+### Environment Configuration
+
+The `.env` file at project root is required:
+
+```bash
+# Copy from template if not exists
+cp .env .env.backup
+
+# Key variables needed:
+DB_NAME=ocr_results                    # PostgreSQL database
+DB_USER=                     # App user
+DB_PASSWORD=                  # App password
+MINIO_ROOT_USER=             # MinIO access
+MINIO_ROOT_PASSWORD=         # MinIO secret
+```
+
+**IMPORTANT**: Never commit `.env` to git. Use `.env` template only for examples.
+
+### Service Details
+
+| Service | Port | Protocol | Credentials |
+|---------|------|----------|-------------|
+| **ocr-api** | 8081 | HTTP | JWT token required |
+| **ocr-engine** | 8000 | HTTP | No auth |
+| **ms-ocr** | 8080 | HTTP | No auth |
+| **ocr-postgres** | 5432 | TCP |  /  |
+| **ocr-redis** | 6379 | TCP | No password |
+| **ocr-minio** | 9000/9001 | HTTP |  /  |
+
+### Initial Database Setup
+
+When postgres container starts, create the app database:
+
+```bash
+# Create app user and grant privileges
+docker exec ocr-postgres psql -U postgres -c \
+  "CREATE USER  WITH PASSWORD '';"
+docker exec ocr-postgres psql -U postgres -c \
+  "ALTER USER  WITH CREATEDB;"
+docker exec ocr-postgres psql -U postgres -d ocr_results -c \
+  "GRANT ALL PRIVILEGES ON SCHEMA public TO ;"
+docker exec ocr-postgres psql -U postgres -d ocr_results -c \
+  "GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ;"
+docker exec ocr-postgres psql -U postgres -d ocr_results -c \
+  "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ;"
+```
+
+Quarkus migrations (Flyway) will run automatically when ocr-api starts.
+
+### Stopping Services
+
+```bash
+# Graceful shutdown (keeps volumes)
+docker-compose down
+
+# Full cleanup (removes data)
+docker-compose down -v
+```
+
+### Logs & Debugging
+
+```bash
+# View logs for specific service
+docker logs ocr-api -f
+docker logs ocr-postgres -f
+
+# See all logs
+docker-compose logs -f
+
+# Check container status
+docker ps -a
+docker inspect ocr-api
+```
 
 ---
 

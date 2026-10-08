@@ -24,6 +24,9 @@ public class AuthorizationFilter implements ContainerRequestFilter {
     private static final Map<String, Set<String>> ENDPOINT_ROLES = Map.ofEntries(
             Map.entry("/api/v1/documents", Set.of("USER", "ADMIN")),
             Map.entry("/api/v1/documents/{id}", Set.of("USER", "ADMIN", "VIEWER")),
+            Map.entry("/api/v1/documents/{id}/upload", Set.of("USER", "ADMIN")),
+            Map.entry("/api/v1/documents/{id}/process", Set.of("USER", "ADMIN")),
+            Map.entry("/api/v1/documents/{id}/processing-status", Set.of("USER", "ADMIN", "VIEWER")),
             Map.entry("/api/v1/documents/{id}/reprocess", Set.of("ADMIN")),
             Map.entry("/api/v1/documents/{id}/verifications", Set.of("USER", "ADMIN", "VIEWER")),
             Map.entry("/api/v1/telemetry", Set.of("USER", "ADMIN", "VIEWER")),

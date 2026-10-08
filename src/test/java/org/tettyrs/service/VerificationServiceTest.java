@@ -12,6 +12,8 @@ import org.tettyrs.entities.enums.DocumentType;
 import org.tettyrs.entities.enums.ProcessingStatus;
 import org.tettyrs.entities.enums.VerificationStatus;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
@@ -23,7 +25,7 @@ class VerificationServiceTest {
     VerificationService verificationService;
 
     private Document testDoc;
-    private Long testDocumentId;
+    private UUID testDocumentId;
 
     @BeforeEach
     void setup() {
@@ -65,7 +67,7 @@ class VerificationServiceTest {
         assertThrows(
                 RuntimeException.class,
                 () -> verificationService.createVerification(
-                        999999L,
+                        UUID.fromString("99999999-9999-9999-9999-999999999999"),
                         VerificationStatus.PASSED,
                         "{}",
                         0.95f,

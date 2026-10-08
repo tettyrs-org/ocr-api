@@ -10,6 +10,7 @@ import org.tettyrs.entities.ExtractionCallback;
 import org.tettyrs.entities.enums.CallbackStatus;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Path("/api/v1/documents/{documentId}/callbacks")
@@ -19,7 +20,7 @@ public class CallbackController extends BaseController {
 
     @GET
     public Response listCallbacks(
-            @PathParam("documentId") Long documentId,
+            @PathParam("documentId") UUID documentId,
             @QueryParam("status") String status,
             @QueryParam("page") Integer page,
             @QueryParam("limit") Integer limit,
@@ -71,7 +72,7 @@ public class CallbackController extends BaseController {
     @GET
     @Path("/{callbackId}")
     public Response getCallback(
-            @PathParam("documentId") Long documentId,
+            @PathParam("documentId") UUID documentId,
             @PathParam("callbackId") Long callbackId,
             @Context UriInfo uriInfo
     ){
@@ -113,7 +114,7 @@ public class CallbackController extends BaseController {
     @Path("/{callbackId}/retry")
     @Transactional
     public  Response retryCallback(
-            @PathParam("documentId") Long documentId,
+            @PathParam("documentId") UUID documentId,
             @PathParam("callbackId") Long callbackId,
             @Context UriInfo uriInfo
     ){

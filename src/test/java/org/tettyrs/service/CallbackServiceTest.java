@@ -14,6 +14,7 @@ import org.tettyrs.entities.enums.DocumentType;
 import org.tettyrs.entities.enums.ProcessingStatus;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,7 +27,7 @@ class CallbackServiceTest {
     CallbackService callbackService;
 
     private Document testDoc;
-    private Long testDocumentId;
+    private UUID testDocumentId;
     private String testWebhookUrl = "https://webhook.example.com/ocr/events";
 
     @BeforeEach

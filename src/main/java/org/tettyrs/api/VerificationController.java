@@ -9,6 +9,7 @@ import org.tettyrs.dto.enums.ErrorCode;
 import org.tettyrs.entities.DocumentVerification;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Path("/api/v1/documents/{documentId}/verifications")
@@ -18,7 +19,7 @@ public class VerificationController extends BaseController {
 
     @GET
     public Response listVerifications(
-            @PathParam("documentId") Long documentId,
+            @PathParam("documentId") UUID documentId,
             @QueryParam("page") Integer page,
             @QueryParam("limit") Integer limit,
             @Context UriInfo uriInfo
@@ -61,7 +62,7 @@ public class VerificationController extends BaseController {
     @GET
     @Path("/{verificationId}")
     public Response getVerification(
-            @PathParam("documentId") Long documentId,
+            @PathParam("documentId") UUID documentId,
             @PathParam("verificationId") Long verificationId,
             @Context UriInfo uriInfo
     ) {

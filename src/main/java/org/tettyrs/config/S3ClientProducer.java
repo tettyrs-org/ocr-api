@@ -17,13 +17,13 @@ public class S3ClientProducer {
     @ConfigProperty(name = "quarkus.s3.endpoint-override")
     String s3Endpoint;
 
-    @ConfigProperty(name = "aws.access.key.id")
+    @ConfigProperty(name = "quarkus.s3.aws.credentials.static-provider.access-key-id")
     String accessKeyId;
 
-    @ConfigProperty(name = "aws.secret.access.key")
+    @ConfigProperty(name = "quarkus.s3.aws.credentials.static-provider.secret-access-key")
     String secretAccessKey;
 
-    @ConfigProperty(name = "aws.region")
+    @ConfigProperty(name = "quarkus.s3.aws.region")
     String region;
 
     @Produces

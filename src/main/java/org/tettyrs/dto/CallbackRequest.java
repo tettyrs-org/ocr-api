@@ -1,7 +1,9 @@
 package org.tettyrs.dto;
 
+import java.util.UUID;
+
 public class CallbackRequest {
-    public Long documentId;
+    public UUID documentId;
     public String webhookUrl;
     public String eventType;
     public String payload;

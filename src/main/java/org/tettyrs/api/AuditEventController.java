@@ -12,6 +12,7 @@ import org.tettyrs.dto.enums.ErrorCode;
 import org.tettyrs.service.AuditEventService;
 
 import java.util.List;
+import java.util.UUID;
 
 import io.quarkus.security.Authenticated;
 
@@ -26,7 +27,7 @@ public class AuditEventController {
     @Authenticated
     @GET
     public Response getAuditTrail(
-            @PathParam("documentId") Long documentId,
+            @PathParam("documentId") UUID documentId,
             @Context UriInfo uriInfo) {
 
         try {

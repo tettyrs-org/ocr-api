@@ -431,31 +431,122 @@ Libraries like smallrye-jwt have their place, but for simple HMAC-SHA256, the ex
 
 Proprietary - Tettyrs Organization
 
-## Docker Setup
+## Docker Deployment
 
-Run the entire stack with Docker Compose:
+### Full Stack (Recommended)
+
+Run the entire OCR stack from the project root:
 
 ```bash
-# Copy environment variables
-cp .env.example .env
+cd /path/to/Projects/OCR
 
-# Build and start services
-docker-compose up -d
+# Start all 6 services
+docker-compose --env-file .env up -d
 
 # Check service health
-docker-compose ps
+docker ps -a --format "table {{.Names}}\t{{.Status}}"
 ```
 
-This will start:
-- **PostgreSQL 18** on port 5432
-- **MinIO** (S3-compatible storage) on port 9000
-- **OCR API** on port 8080
+This starts the complete microservices architecture:
+- **ocr-api** (REST API) - http://localhost:8081
+- **ocr-engine** (Python OCR service) - http://localhost:8000
+- **ms-ocr** (Java correction engine) - http://localhost:8080
+- **ocr-postgres** (Database) - localhost:5432
+- **ocr-redis** (Cache) - localhost:6379
+- **ocr-minio** (S3 storage) - http://localhost:9000 (API) / http://localhost:9001 (Console)
 
-Access MinIO console at `http://localhost:9001` with credentials from `.env`.
+### Environment Setup
 
-To stop:
+The `.env` file at project root contains shared credentials (gitignored):
+
+```ini
+# Database (PostgreSQL) - configure your own values
+DB_NAME=${DB_NAME}
+DB_USER=${DB_USER}
+DB_PASSWORD=${DB_PASSWORD}
+
+# MinIO / S3 - use your credentials
+MINIO_ROOT_USER=${MINIO_ROOT_USER}
+MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+AWS_REGION=us-east-1
+S3_BUCKET=${S3_BUCKET}
+
+# Redis
+REDIS_HOST=redis
+REDIS_PORT=6379
+```
+
+**Never commit `.env` with actual secrets to git.** See `.env` file for setup instructions.
+
+### API Access
+
+Test the API is running:
+
 ```bash
+# Check health
+curl http://localhost:8081/q/health
+
+# Login to get token
+curl -X POST http://localhost:8081/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"***REMOVED***"}'
+
+# Upload document with token
+TOKEN="<your-jwt-token>"
+curl -X POST http://localhost:8081/api/documents/upload \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@document.pdf"
+```
+
+### MinIO Console
+
+Access S3 storage at:
+- **URL**: http://localhost:9001
+- **Username**: 
+- **Password**: 
+
+Create the `ocr-documents` bucket for file storage.
+
+### Stopping the Stack
+
+```bash
+# Stop all services
 docker-compose down
+
+# Remove volumes (full cleanup)
+docker-compose down -v
+```
+
+### Troubleshooting Docker
+
+**Services not starting?**
+```bash
+# Check logs
+docker logs ocr-api
+docker logs ocr-postgres
+
+# Verify environment variables
+docker exec ocr-postgres printenv | grep DB_
+```
+
+**Database connection errors?**
+```bash
+# Verify database and user exist
+docker exec ocr-postgres psql -U postgres -l
+
+# Create app user if missing
+docker exec ocr-postgres psql -U postgres -c \
+  "CREATE USER  WITH PASSWORD '';"
+docker exec ocr-postgres psql -U postgres -c \
+  "GRANT ALL PRIVILEGES ON DATABASE ocr_results TO ;"
+```
+
+**Ports already in use?**
+```bash
+# Kill existing containers
+docker-compose down
+
+# Or change ports in docker-compose.yml
 ```
 
 ## Contributing

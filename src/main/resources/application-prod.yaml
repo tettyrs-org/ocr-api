@@ -12,10 +12,10 @@ quarkus:
       "io.quarkus": WARN
       "io.vertx": WARN
 
-  # Hibernate ORM - Production (strict validation)
+  # Hibernate ORM - Production (Flyway handles schema)
   hibernate-orm:
     database:
-      generation: validate
+      generation: none
     log:
       sql: false
 

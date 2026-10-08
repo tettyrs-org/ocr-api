@@ -8,6 +8,7 @@ import org.tettyrs.entities.Document;
 import org.tettyrs.entities.enums.AuditAction;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -15,7 +16,7 @@ public class AuditEventService {
 
 
     @Transactional
-    public void logAuditEvent(Long documentId, AuditAction action, String actor, String details) {
+    public void logAuditEvent(UUID documentId, AuditAction action, String actor, String details) {
         Document doc = Document.findById(documentId);
         if (doc == null) {
             throw new IllegalArgumentException("Document not found: " + documentId);
@@ -29,7 +30,7 @@ public class AuditEventService {
         event.persist();
     }
 
-    public List<AuditEventResponse> getAuditTrail(Long documentId) {
+    public List<AuditEventResponse> getAuditTrail(UUID documentId) {
         return ((List<AuditEvent>) (List<?>) AuditEvent.find("document.id", documentId).list())
                 .stream()
                 .map(this::toResponse)

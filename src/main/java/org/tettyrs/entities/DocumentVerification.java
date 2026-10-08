@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.tettyrs.entities.enums.VerificationStatus;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "ocr_document_verifications", indexes = {
@@ -18,7 +19,7 @@ import java.time.LocalDateTime;
 public class DocumentVerification extends PanacheEntity {
 
     @Column(name = "document_id", nullable = false)
-    public Long documentId;
+    public UUID documentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_id", insertable = false, updatable = false)

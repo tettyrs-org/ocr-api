@@ -1,39 +1,36 @@
-version: '3.9'
+version: '3.8'
 
 services:
-  postgres:
-    image: postgres:18-alpine
-    container_name: ocr-postgres
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - ocr-network
-
   minio:
-    image: minio/minio:latest
+    image: elestio/minio:latest
     container_name: ocr-minio
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      - TZ=Asia/Jakarta
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
       - minio_data:/data
-    command: minio server /data --console-address ":9001"
+    networks:
+      - ocr-network
+
+  postgres:
+    image: postgres:18-alpine
+    container_name: ocr-postgres
+    environment:
+      - TZ=Asia/Jakarta
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_INITDB_ARGS="-U postgres"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -46,6 +43,7 @@ services:
     ports:
       - "6379:6379"
     environment:
+      - TZ=Asia/Jakarta
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
@@ -62,30 +60,32 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: ocr-api-img
     container_name: ocr-api
     environment:
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      REDIS_DB: 0
-      S3_ENDPOINT: http://minio:9000
-      S3_BUCKET: ${S3_BUCKET}
-      AWS_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
-      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
-      QUARKUS_PROFILE: dev
+      - TZ=Asia/Jakarta
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=0
+      - S3_ENDPOINT=http://minio:9000
+      - S3_BUCKET=${S3_BUCKET}
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - QUARKUS_PROFILE=dev
     ports:
       - "8081:8081"
     depends_on:
       postgres:
         condition: service_healthy
       minio:
-        condition: service_healthy
+        condition: service_started
       redis:
         condition: service_healthy
     networks:

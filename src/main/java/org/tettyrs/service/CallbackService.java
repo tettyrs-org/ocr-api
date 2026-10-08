@@ -9,6 +9,7 @@ import io.quarkus.logging.Log;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @ApplicationScoped
 public class CallbackService {
@@ -18,7 +19,7 @@ public class CallbackService {
      */
     @Transactional
     public ExtractionCallback createCallback(
-            Long documentId,
+            UUID documentId,
             String webhookUrl,
             CallbackEventType eventType,
             String payload) {
@@ -62,7 +63,7 @@ public class CallbackService {
      * Get callbacks untuk document dengan optional status filter
      */
     public List<ExtractionCallback> getCallbacksForDocument(
-            Long documentId,
+            UUID documentId,
             CallbackStatus statusFilter) {
 
         if (statusFilter != null) {
@@ -174,7 +175,7 @@ public class CallbackService {
     /**
      * Get callback delivery statistics
      */
-    public CallbackStats getCallbackStats(Long documentId) {
+    public CallbackStats getCallbackStats(UUID documentId) {
         List<ExtractionCallback> callbacks = ExtractionCallback.find(
                 "documentId = ?1",
                 documentId

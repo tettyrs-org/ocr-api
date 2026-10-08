@@ -15,6 +15,7 @@ import org.tettyrs.entities.enums.CallbackStatus;
 import org.tettyrs.service.CallbackService;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Path("/api/v1/callbacks")

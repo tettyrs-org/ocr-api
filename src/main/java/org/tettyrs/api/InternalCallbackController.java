@@ -11,6 +11,8 @@ import org.tettyrs.entities.enums.DocumentStatus;
 import org.tettyrs.entities.enums.ProcessingStatus;
 import org.tettyrs.service.DocumentService;
 
+import java.util.UUID;
+
 @Path("/internal/documents")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -23,7 +25,7 @@ public class InternalCallbackController {
     @Path("/{id}/extraction")
     @Transactional
     public Response extractionCallback(
-            @PathParam("id") Long documentId,
+            @PathParam("id") UUID documentId,
             ExtractionResult result,
             @Context UriInfo uriInfo) {
 

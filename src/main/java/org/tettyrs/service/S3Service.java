@@ -8,9 +8,12 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
 import java.io.InputStream;
+import java.util.logging.Logger;
 
 @ApplicationScoped
 public class S3Service {
+    private static final Logger LOGGER = Logger.getLogger(S3Service.class.getName());
+
     @Inject
     S3Client s3Client;
 
@@ -20,6 +23,8 @@ public class S3Service {
     // Upload
     public String uploadFile(String key, InputStream fileStream, Long fileSize, String contentType){
         try {
+            LOGGER.info("Uploading file to S3: key=" + key + ", bucket=" + bucketName + ", fileSize=" + fileSize);
+
             PutObjectRequest putRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)
@@ -28,8 +33,14 @@ public class S3Service {
                     .build();
 
             s3Client.putObject(putRequest, RequestBody.fromInputStream(fileStream, fileSize));
-            return buildS3Path(key);
+            String s3Path = buildS3Path(key);
+            LOGGER.info("File uploaded successfully to S3: " + s3Path);
+            return s3Path;
+        }catch (NoSuchBucketException e){
+            LOGGER.severe("S3 bucket does not exist: " + bucketName);
+            throw new RuntimeException("S3 bucket does not exist: " + bucketName + ". Ensure the bucket is created in MinIO.", e);
         }catch (S3Exception e){
+            LOGGER.severe("S3 upload failed: " + e.getMessage());
             throw new RuntimeException("S3 upload failed: "+e.getMessage(), e);
         }
     }

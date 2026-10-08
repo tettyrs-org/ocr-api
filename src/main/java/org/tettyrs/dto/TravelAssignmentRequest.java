@@ -5,12 +5,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.tettyrs.entities.enums.AssignmentStatus;
 
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 public class TravelAssignmentRequest {
 
     @JsonProperty("document_id")
-    public Long documentId;
+    public UUID documentId;
 
     @JsonProperty("assigned_to")
     public String assignedTo;

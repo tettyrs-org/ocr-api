@@ -3,12 +3,13 @@ package org.tettyrs.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CallbackResponse {
 
     public Long id;
-    public Long documentId;
+    public UUID documentId;
     public String webhookUrl;
     public String eventType;
     public String payload;
