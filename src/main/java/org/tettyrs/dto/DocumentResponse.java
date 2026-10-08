@@ -7,13 +7,14 @@ import org.tettyrs.entities.enums.DocumentStatus;
 import org.tettyrs.entities.enums.DocumentType;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 public class DocumentResponse {
 
     @JsonProperty("id")
-    public Long id;
+    public UUID id;
 
     @JsonProperty("filename")
     public String filename;

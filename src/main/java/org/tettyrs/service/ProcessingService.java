@@ -12,6 +12,7 @@ import org.tettyrs.entities.AuditEvent;
 import org.tettyrs.entities.enums.ProcessingStatus;
 import org.tettyrs.entities.enums.AuditAction;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @ApplicationScoped
@@ -26,12 +27,12 @@ public class ProcessingService {
     @Inject
     EntityManager em;
 
-    public void startProcessing(Long documentId) {
+    public void startProcessing(UUID documentId) {
         CompletableFuture.runAsync(() -> processDocument(documentId));
     }
 
     @Transactional
-    protected void processDocument(Long documentId) {
+    protected void processDocument(UUID documentId) {
         Document doc = (Document) Document.findById(documentId);
         if (doc == null) return;
 

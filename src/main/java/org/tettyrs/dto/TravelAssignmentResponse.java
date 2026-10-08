@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.tettyrs.entities.enums.AssignmentStatus;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -15,7 +16,7 @@ public class TravelAssignmentResponse {
     public Long id;
 
     @JsonProperty("document_id")
-    public Long documentId;
+    public UUID documentId;
 
     @JsonProperty("assigned_to")
     public String assignedTo;

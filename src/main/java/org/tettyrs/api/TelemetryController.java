@@ -11,6 +11,7 @@ import org.tettyrs.dto.enums.ErrorCode;
 import org.tettyrs.entities.TelemetryTiming;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Path("/api/v1/documents/{documentId}/telemetry")
@@ -20,7 +21,7 @@ public class TelemetryController extends BaseController {
 
     @POST
     public Response recordTimings(
-            @PathParam("documentId") Long documentId,
+            @PathParam("documentId") UUID documentId,
             TimingsBatch batch,
             @Context UriInfo uriInfo) {
 
@@ -67,7 +68,7 @@ public class TelemetryController extends BaseController {
 
     @GET
     public Response listTelemetry(
-            @PathParam("documentId") Long documentId,
+            @PathParam("documentId") UUID documentId,
             @QueryParam("component") String component,
             @QueryParam("page") Integer page,
             @QueryParam("limit") Integer limit,
@@ -118,7 +119,7 @@ public class TelemetryController extends BaseController {
     @GET
     @Path("{telemetryId}")
     public Response getTelemetry(
-        @PathParam("documentId") Long documentId,
+        @PathParam("documentId") UUID documentId,
         @PathParam("telemetryId") Long telemetryId,
         @Context UriInfo uriInfo
     ){

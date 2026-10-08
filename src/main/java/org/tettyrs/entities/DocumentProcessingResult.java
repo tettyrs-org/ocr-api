@@ -5,14 +5,15 @@ import jakarta.persistence.*;
 import org.tettyrs.entities.enums.ProcessingStatus;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "ocr_document_processing_results")
 public class DocumentProcessingResult extends PanacheEntity {
     @Column(name = "document_id")
-    public Long documentId;
+    public UUID documentId;
 
-    @Column(name = "oxr_text", columnDefinition = "TEXT")
+    @Column(name = "ocr_text", columnDefinition = "TEXT")
     public String ocrText;
 
     @Column(name = "ocr_confidence")

@@ -1,7 +1,7 @@
 package org.tettyrs.entities;
 
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,6 +13,7 @@ import org.tettyrs.entities.enums.ProcessingStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "ocr_documents", indexes ={
@@ -22,7 +23,11 @@ import java.util.List;
 } )
 
 @NoArgsConstructor
-public class Document extends PanacheEntity {
+public class Document extends PanacheEntityBase {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    public UUID id;
 
     @Column(nullable = false, name = "filename")
     public String filename;
@@ -69,7 +74,7 @@ public class Document extends PanacheEntity {
     public ProcessingStatus processingStatus = ProcessingStatus.PENDING;
 
     @Column(name = "processing_result_id")
-    public Long proccesingResultId;
+    public UUID proccesingResultId;
 
     @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<DocumentVerification> verifications;

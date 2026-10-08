@@ -10,6 +10,7 @@ import org.tettyrs.entities.enums.VerificationStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @ApplicationScoped
 public class VerificationService {
@@ -19,7 +20,7 @@ public class VerificationService {
 
     @Transactional
     public DocumentVerification createVerification(
-            Long documentId,
+            UUID documentId,
             VerificationStatus status,
             String verificationDetails,
             Float confidenceScore,
@@ -52,7 +53,7 @@ public class VerificationService {
     @Transactional
     public DocumentVerification updateVerificationStatus(
             Long verificationId,
-            Long documentId,
+            UUID documentId,
             VerificationStatus newStatus) {
 
         try {
@@ -86,7 +87,7 @@ public class VerificationService {
     }
 
     public List<DocumentVerification> getVerificationsForDocument(
-            Long documentId,
+            UUID documentId,
             VerificationStatus statusFilter) {
 
         if (statusFilter != null) {
@@ -102,7 +103,7 @@ public class VerificationService {
         }
     }
 
-    public DocumentVerification getLatestVerification(Long documentId) {
+    public DocumentVerification getLatestVerification(UUID documentId) {
         return DocumentVerification.find(
                 "documentId = ?1 ORDER BY id DESC",
                 documentId
@@ -110,7 +111,7 @@ public class VerificationService {
     }
 
     @Transactional
-    public DocumentVerification addNotes(Long verificationId, Long documentId, String notes) {
+    public DocumentVerification addNotes(Long verificationId, UUID documentId, String notes) {
         try {
             DocumentVerification verification = DocumentVerification.find(
                     "id = ?1 AND documentId = ?2",
@@ -132,7 +133,7 @@ public class VerificationService {
 
     @Transactional
     public void createBatchVerifications(
-            Long documentId,
+            UUID documentId,
             List<DocumentVerification> verifications) {
 
         try {

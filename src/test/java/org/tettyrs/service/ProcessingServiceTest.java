@@ -8,6 +8,8 @@ import org.tettyrs.entities.Document;
 import org.tettyrs.entities.enums.DocumentType;
 import org.tettyrs.entities.enums.ProcessingStatus;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @QuarkusTest
@@ -28,7 +30,7 @@ public class ProcessingServiceTest {
         doc.processingStatus = ProcessingStatus.PENDING;
         doc.persist();
 
-        Long docId = doc.id;
+        UUID docId = doc.id;
         assertNotNull(docId);
 
         processingService.startProcessing(docId);

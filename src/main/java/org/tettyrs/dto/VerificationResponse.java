@@ -3,12 +3,13 @@ package org.tettyrs.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class VerificationResponse {
 
     public Long id;
-    public Long documentId;
+    public UUID documentId;
     public String verificationStatus;
     public String verificationDetails;
     public Float confidenceScore;
@@ -20,7 +21,7 @@ public class VerificationResponse {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class DocumentInfo {
-        public Long id;
+        public UUID id;
         public String filename;
         public String documentType;
         public LocalDateTime createdAt;

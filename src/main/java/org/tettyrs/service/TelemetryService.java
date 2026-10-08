@@ -8,12 +8,13 @@ import io.quarkus.logging.Log;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @ApplicationScoped
 public class TelemetryService {
 
     @Transactional
-    public LocalDateTime startTiming(Long documentId, String component) {
+    public LocalDateTime startTiming(UUID documentId, String component) {
         try {
             TelemetryTiming timing = new TelemetryTiming();
             timing.documentId = documentId;
@@ -33,7 +34,7 @@ public class TelemetryService {
 
     @Transactional
     public LocalDateTime endTiming(
-            Long documentId,
+            UUID documentId,
             String component,
             TelemetryStatus status) {
 
@@ -69,14 +70,14 @@ public class TelemetryService {
         }
     }
 
-    public List<TelemetryTiming> getTimingsForDocument(Long documentId) {
+    public List<TelemetryTiming> getTimingsForDocument(UUID documentId) {
         return TelemetryTiming.find(
                 "documentId = ?1 ORDER BY createdAt DESC",
                 documentId
         ).list();
     }
 
-    public List<TelemetryTiming> getTimingsForComponent(Long documentId, String component) {
+    public List<TelemetryTiming> getTimingsForComponent(UUID documentId, String component) {
         return TelemetryTiming.find(
                 "documentId = ?1 AND component = ?2 ORDER BY createdAt DESC",
                 documentId, component
@@ -99,7 +100,7 @@ public class TelemetryService {
                 .orElse(0.0);
     }
 
-    public ProcessingStats getProcessingStats(Long documentId) {
+    public ProcessingStats getProcessingStats(UUID documentId) {
         List<TelemetryTiming> timings = getTimingsForDocument(documentId);
 
         ProcessingStats stats = new ProcessingStats();
@@ -125,7 +126,7 @@ public class TelemetryService {
 
     @Transactional
     public void recordError(
-            Long documentId,
+            UUID documentId,
             String component,
             String errorMessage) {
 

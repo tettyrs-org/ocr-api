@@ -14,6 +14,7 @@ import org.tettyrs.entities.enums.TelemetryStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,7 +27,7 @@ class TelemetryServiceTest {
     TelemetryService telemetryService;
 
     private Document testDoc;
-    private Long testDocumentId;
+    private UUID testDocumentId;
 
     @BeforeEach
     void setup() {

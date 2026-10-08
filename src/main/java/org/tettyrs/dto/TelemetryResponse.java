@@ -3,12 +3,13 @@ package org.tettyrs.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TelemetryResponse {
 
     public Long id;
-    public Long documentId;
+    public UUID documentId;
     public String component;
     public LocalDateTime startTime;
     public LocalDateTime endTime;

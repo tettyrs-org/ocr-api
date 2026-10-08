@@ -5,9 +5,10 @@ WORKDIR /build
 COPY pom.xml .
 COPY .mvn .mvn
 COPY mvnw .
+COPY mvnw.cmd .
 COPY src ./src
 
-RUN ./mvnw clean package -DskipTests -q
+RUN sed -i 's/\r$//' ./mvnw && chmod +x ./mvnw && ./mvnw clean package -DskipTests -q
 
 # Runtime stage
 FROM eclipse-temurin:17-jre-alpine

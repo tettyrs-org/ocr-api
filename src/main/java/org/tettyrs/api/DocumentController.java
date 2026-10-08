@@ -21,6 +21,7 @@ import org.tettyrs.service.S3Service;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.UUID;
 
 @Path("/api/v1/documents")
 @Produces(MediaType.APPLICATION_JSON)
@@ -108,7 +109,7 @@ public class DocumentController {
     @GET
     @Path("/{id}")
     public Response getDocument(
-            @PathParam("id") Long id,
+            @PathParam("id") UUID id,
             @Context UriInfo uriInfo) {
 
         try {
@@ -139,7 +140,7 @@ public class DocumentController {
     @DELETE
     @Path("/{id}")
     public Response deleteDocument(
-            @PathParam("id") Long id) {
+            @PathParam("id") UUID id) {
 
         try {
             documentService.deleteDocument(id);
@@ -168,7 +169,7 @@ public class DocumentController {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
     public Response uploadDocument(
-            @PathParam("id") Long documentId,
+            @PathParam("id") UUID documentId,
             @RestForm("file") FileUpload file,
             @Context UriInfo uriInfo) {
 
@@ -223,7 +224,7 @@ public class DocumentController {
     @Path("/{id}/file")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response downloadDocument(
-            @PathParam("id") Long documentId) {
+            @PathParam("id") UUID documentId) {
 
         try {
             Document doc = Document.findById(documentId);
@@ -262,7 +263,7 @@ public class DocumentController {
     @POST
     @Path("/{id}/reprocess")
     public Response reprocessDocument(
-            @PathParam("id") Long documentId,
+            @PathParam("id") UUID documentId,
             @Context UriInfo uriInfo) {
 
         try {
@@ -305,10 +306,56 @@ public class DocumentController {
         }
     }
 
+    @POST
+    @Path("/{id}/process")
+    public Response processDocument(
+            @PathParam("id") UUID documentId,
+            @Context UriInfo uriInfo) {
+
+        try {
+            Document doc = Document.findById(documentId);
+            if (doc == null) {
+                ApiResponse<Void> response = ApiResponse.error(
+                        ErrorCode.DOCUMENT_NOT_FOUND.code,
+                        "Document not found"
+                );
+                return Response.status(ErrorCode.DOCUMENT_NOT_FOUND.httpStatus)
+                        .entity(response)
+                        .build();
+            }
+
+            if (doc.s3Path == null) {
+                ApiResponse<Void> response = ApiResponse.error(
+                        ErrorCode.VALIDATION_ERROR.code,
+                        "Document has no uploaded file"
+                );
+                return Response.status(ErrorCode.VALIDATION_ERROR.httpStatus)
+                        .entity(response)
+                        .build();
+            }
+
+            processingService.startProcessing(documentId);
+
+            DocumentResponse docResponse = documentService.getDocumentById(documentId);
+            ApiResponse<DocumentResponse> response = ApiResponse.success(docResponse,
+                    new ApiResponse.ResponseMeta(uriInfo.getPath())
+            );
+            return Response.accepted(response).build();
+        } catch (Exception e) {
+            ApiResponse<Void> response = ApiResponse.error(
+                    ErrorCode.INTERNAL_ERROR.code,
+                    "Failed to start processing"
+            );
+            return Response.status(ErrorCode.INTERNAL_ERROR.httpStatus)
+                    .entity(response)
+                    .build();
+        }
+    }
+
     @GET
     @Path("/{id}/processing-status")
     public Response getProcessingStatus(
-            @PathParam("id") Long documentId,
+            @PathParam("id") UUID documentId,
             @Context UriInfo uriInfo) {
 
         try {
@@ -362,7 +409,7 @@ public class DocumentController {
     @Path("/{id}/verification")
     @Transactional
     public Response verifyDocument(
-            @PathParam("id") Long documentId,
+            @PathParam("id") UUID documentId,
             VerificationRequest request,
             @Context UriInfo uriInfo) {
 

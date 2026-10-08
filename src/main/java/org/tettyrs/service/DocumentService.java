@@ -13,6 +13,7 @@ import org.tettyrs.entities.enums.DocumentStatus;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -44,7 +45,7 @@ public class DocumentService extends PanacheEntity {
         return toResponse(doc);
     }
 
-    public DocumentResponse getDocumentById(Long id) {
+    public DocumentResponse getDocumentById(UUID id) {
         Document doc = Document.findById(id);
         if (doc == null) {
             throw new IllegalArgumentException("Document not found: " + id);
@@ -60,7 +61,7 @@ public class DocumentService extends PanacheEntity {
     }
 
     @Transactional
-    public void updateDocumentStatus(Long id, DocumentStatus status){
+    public void updateDocumentStatus(UUID id, DocumentStatus status){
         Document document = Document.findById(id);
         document.status = status;
         document.persist();
@@ -70,7 +71,7 @@ public class DocumentService extends PanacheEntity {
     }
 
     @Transactional
-    public void deleteDocument(Long id) {
+    public void deleteDocument(UUID id) {
         Document doc = Document.findById(id);
         if (doc == null) {
             throw new IllegalArgumentException("Document not found: " + id);
@@ -82,7 +83,7 @@ public class DocumentService extends PanacheEntity {
     }
 
     @Transactional
-    public DocumentResponse uploadFile(Long documentId, InputStream fileStream, Long fileSize, String contentType){
+    public DocumentResponse uploadFile(UUID documentId, InputStream fileStream, Long fileSize, String contentType){
         //validation
         if (fileSize > maxFileSIzeMb * 1024 * 1024) {
             throw new IllegalArgumentException("File too large. Max: "+maxFileSIzeMb+ "MB");
