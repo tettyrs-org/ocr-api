@@ -31,8 +31,9 @@ build/
 ### VS Code ###
 .vscode/
 
-### Mac OS ###
+### Mac OS & Windows ###
 .DS_Store
+Thumbs.db
 
 ### Secrets & Keys ###
 *.pem
@@ -58,3 +59,18 @@ deployment.yaml
 ### Docker ###
 docker-compose.override.yml
 .dockerignore
+
+### Logs & Temporary Files ###
+*.log
+*.ps1
+*.tmp
+*.out
+
+### Python ###
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+env/
+*.egg-info/
