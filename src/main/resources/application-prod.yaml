@@ -1,0 +1,30 @@
+mp:
+  jwt:
+    verify:
+      issuer: ${APP_ISSUER}
+
+quarkus:
+  # Production logging (minimal)
+  log:
+    level: INFO
+    category:
+      "org.tettyrs": INFO
+      "io.quarkus": WARN
+      "io.vertx": WARN
+
+  # Hibernate ORM - Production (strict validation)
+  hibernate-orm:
+    database:
+      generation: validate
+    log:
+      sql: false
+
+  # Database connection pooling (production)
+  datasource:
+    min-size: 10
+    max-size: 50
+    idle-timeout: 15m
+
+  # Enable real OIDC in production
+  oidc:
+    enabled: true

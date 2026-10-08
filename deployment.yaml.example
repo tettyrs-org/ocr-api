@@ -1,0 +1,172 @@
+# deployment.yaml.example - Kubernetes Deployment template
+#
+# USAGE:
+# 1. cp deployment.yaml.example deployment.yaml
+# 2. Edit deployment.yaml sesuai environment
+# 3. kubectl apply -f deployment.yaml
+#
+# DO NOT commit deployment.yaml to git!
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocr-api
+  namespace: default
+  labels:
+    app: ocr-api
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ocr-api
+  template:
+    metadata:
+      labels:
+        app: ocr-api
+    spec:
+      containers:
+      - name: api
+        image: ocr-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+
+        # Environment variables from Secret
+        env:
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: jwt-secret
+        - name: JWT_EXPIRATION
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: jwt-expiration
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: db-host
+        - name: DB_PORT
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: db-port
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: db-name
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: db-user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: db-password
+        - name: REDIS_HOST
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: redis-host
+        - name: REDIS_PORT
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: redis-port
+        - name: S3_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: s3-endpoint
+        - name: S3_BUCKET
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: s3-bucket
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: aws-region
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: aws-access-key-id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: aws-secret-access-key
+        - name: QUARKUS_PROFILE
+          valueFrom:
+            secretKeyRef:
+              name: ocr-api-secrets
+              key: quarkus-profile
+
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /q/health/live
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /q/health/ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+        # Resource limits
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+
+      # Pod disruption budget
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - ocr-api
+              topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ocr-api
+  namespace: default
+  labels:
+    app: ocr-api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: ocr-api
