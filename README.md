@@ -101,8 +101,8 @@ quarkus:
 
 Replace the environment variable placeholders with actual values:
 - `DB_PASSWORD`: Your PostgreSQL password
-- `MINIO_ACCESS_KEY`: Your MinIO access key (default: `` for local dev)
-- `MINIO_SECRET_KEY`: Your MinIO secret key (default: `` for local dev)
+- `MINIO_ACCESS_KEY`: Your MinIO access key (default: use your MinIO credentials for local dev)
+- `MINIO_SECRET_KEY`: Your MinIO secret key (default: use your MinIO credentials for local dev)
 
 Set these in a local `.env` file (which is in `.gitignore`) or pass them as environment variables when running the application. Never commit actual credentials to the repository.
 
@@ -502,8 +502,8 @@ curl -X POST http://localhost:8081/api/documents/upload \
 
 Access S3 storage at:
 - **URL**: http://localhost:9001
-- **Username**: 
-- **Password**: 
+- **Username**: ${MINIO_ROOT_USER}
+- **Password**: ${MINIO_ROOT_PASSWORD}
 
 Create the `ocr-documents` bucket for file storage.
 
@@ -534,11 +534,11 @@ docker exec ocr-postgres printenv | grep DB_
 # Verify database and user exist
 docker exec ocr-postgres psql -U postgres -l
 
-# Create app user if missing
+# Create app user if missing (replace ${DB_PASSWORD} with your actual password)
 docker exec ocr-postgres psql -U postgres -c \
-  "CREATE USER  WITH PASSWORD '';"
+  "CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';"
 docker exec ocr-postgres psql -U postgres -c \
-  "GRANT ALL PRIVILEGES ON DATABASE ocr_results TO ;"
+  "GRANT ALL PRIVILEGES ON DATABASE ocr_results TO ${DB_USER};"
 ```
 
 **Ports already in use?**
