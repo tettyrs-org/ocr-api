@@ -553,6 +553,11 @@ docker-compose down
 
 This project is maintained by the Tettyrs Organization. See [@tettyrs](https://github.com/tettyrs) for the maintainer profile.
 
+## Related Projects
+
+- [ocr-engine](https://github.com/tettyrs-org/ocr-engine) - Python OCR extraction service
+- [ms-ocr](https://github.com/tettyrs-org/ms-ocr) - Java correction and normalization service
+
 ## Support & Questions
 
 For issues or questions:
