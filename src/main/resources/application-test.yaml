@@ -1,32 +1,26 @@
-jwt:
-  private-key-location: classpath:privateKey.pem
-  public-key-location: classpath:publicKey.pem
-
-mp:
-  jwt:
-    verify:
-      issuer: http://localhost:8080
-      publickey:
-        location: classpath:publicKey.pem
-      audiences: ocr-api
-
 quarkus:
-  # Test: Use H2 in-memory database
+  # Job berkala (FilePurgeJob) tidak berjalan saat tes. Logikanya diuji langsung.
+  scheduler:
+    enabled: false
+  oidc:
+    tenant-enabled: false
+  http:
+    test-port: 0
+    cors:
+      origins: https://app.test.web.app
+  # Test: PostgreSQL dan Redis sementara dari Dev Services (Docker lokal), terpisah dari stack dev
   datasource:
-    db-kind: h2
-    jdbc:
-      url: "jdbc:h2:mem:test"
-      driver: org.h2.Driver
-    username: sa
-    password: ""
+    db-kind: postgresql
 
   redis:
-    hosts: redis://localhost:6379
-    database: 0
+    hosts: redis://localhost:6379/15
 
   hibernate-orm:
     database:
-      generation: create
+      generation: none
+
+  flyway:
+    clean-at-start: true
 
   log:
     level: DEBUG
@@ -35,8 +29,3 @@ quarkus:
       "io.quarkus": DEBUG
       "io.vertx": WARN
 
-  smallrye-jwt:
-    sign:
-      key-location: classpath:privateKey.pem
-    verify:
-      algorithm: RS256

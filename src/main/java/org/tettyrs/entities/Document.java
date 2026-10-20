@@ -55,6 +55,26 @@ public class Document extends PanacheEntityBase {
     @Column(nullable = false, name = "created_by")
     public String createdBy; // userId
 
+    // Nomor rujukan untuk manusia, ditampilkan ke pengguna (api-spec bagian 2).
+    @Column(nullable = false, name = "doc_ref", unique = true, length = 12)
+    public String docRef;
+
+    // Kategori dari S4a: identity | reimburse | other. Menentukan cara pemrosesan.
+    @Column(name = "category", length = 16)
+    public String category;
+
+    // Field hasil ekstraksi (JSON). Untuk identitas diri, dienkripsi (FieldCipher).
+    @Column(name = "extracted_json", columnDefinition = "TEXT")
+    public String extractedJson;
+
+    // Hasil tinjau pengguna (api-spec bagian 5). Terisi saat dokumen menjadi VERIFIED.
+    @Column(name = "verified_json", columnDefinition = "TEXT")
+    public String verifiedJson;
+
+    // Kunci Idempotency-Key dari klien. Unik per pengunggah.
+    @Column(name = "upload_idempotency_key", length = 64)
+    public String uploadIdempotencyKey;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false, name = "created_at")
     public LocalDateTime createdAt;
@@ -62,6 +82,14 @@ public class Document extends PanacheEntityBase {
     @UpdateTimestamp
     @Column(nullable = false, name = "updated_at")
     public LocalDateTime updatedAt;
+
+    /** Diisi saat pengguna menghapus dokumen (penghapusan lunak). Null berarti masih aktif. */
+    @Column(name = "deleted_at")
+    public LocalDateTime deletedAt;
+
+    /** Diisi saat berkas asli dihapus dari object storage setelah dokumen final (D-11). */
+    @Column(name = "file_purged_at")
+    public LocalDateTime filePurgedAt;
 
     @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<AuditEvent> auditEvents;
@@ -74,7 +102,7 @@ public class Document extends PanacheEntityBase {
     public ProcessingStatus processingStatus = ProcessingStatus.PENDING;
 
     @Column(name = "processing_result_id")
-    public UUID proccesingResultId;
+    public Long processingResultId;
 
     @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
     public List<DocumentVerification> verifications;

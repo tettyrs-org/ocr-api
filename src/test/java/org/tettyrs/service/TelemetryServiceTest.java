@@ -32,6 +32,7 @@ class TelemetryServiceTest {
     @BeforeEach
     void setup() {
         testDoc = new Document();
+        testDoc.docRef = "DOC-" + java.util.UUID.randomUUID().toString().substring(0, 8);
         testDoc.filename = "test_telemetry.pdf";
         testDoc.documentType = DocumentType.PASSPORT;
         testDoc.mimeType = "application/pdf";

@@ -22,6 +22,7 @@ public class ProcessingServiceTest {
     @Transactional
     public void testProcessingStarted() {
         Document doc = new Document();
+        doc.docRef = "DOC-" + java.util.UUID.randomUUID().toString().substring(0, 8);
         doc.filename = "test.pdf";
         doc.documentType = DocumentType.PASSPORT;
         doc.mimeType = "application/pdf";

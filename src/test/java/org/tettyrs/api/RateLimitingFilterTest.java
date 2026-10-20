@@ -1,70 +1,61 @@
 package org.tettyrs.api;
 
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.RestAssured;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
-import org.tettyrs.service.EnhancedJwtValidator;
+import io.quarkus.test.security.TestSecurity;
 import jakarta.inject.Inject;
-import java.util.Arrays;
+import org.tettyrs.service.RateLimitService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.anyOf;
 
 @QuarkusTest
+@TestSecurity(user = "user123", roles = "USER")
 @DisplayName("RateLimitingFilter Tests")
 class RateLimitingFilterTest {
 
     @Inject
-    EnhancedJwtValidator jwtValidator;
-
-    private String userToken;
+    RateLimitService rateLimitService;
 
     @BeforeEach
-    void setup() {
-        userToken = "Bearer " + jwtValidator.generateToken(
-                "user123",
-                "user@example.com",
-                Arrays.asList("USER")
-        );
+    void resetRateLimitCounters() {
+        rateLimitService.reset("user123", "GET /api/v1/documents");
+        rateLimitService.reset("user123", "POST /api/v1/documents");
     }
 
     @Test
     @DisplayName("Should allow request within rate limit")
     void testRequestWithinLimit() {
         given()
-                .header("Authorization", userToken)
                 .when()
                 .get("/api/v1/documents")
                 .then()
-                .statusCode(anyOf(is(200), is(429), is(500))); // Auth/rate limit may trigger
+                .statusCode(not(is(429)));
     }
 
     @Test
-    @DisplayName("Should include Retry-After header when rate limited")
-    void testRateLimitRetryAfterHeader() {
-        // This is a placeholder - actual rate limit testing needs many sequential requests
-        // Rate limit: 20 per hour for /api/v1/documents
-
-        given()
-                .header("Authorization", userToken)
-                .when()
-                .get("/api/v1/documents")
-                .then()
-                .statusCode(anyOf(is(200), is(429), is(500)));
+    @DisplayName("Daftar dokumen (GET) tidak menghabiskan kuota unggah (POST)")
+    void testListDoesNotConsumeUploadLimit() {
+        for (int i = 0; i < 25; i++) {
+            given()
+                    .when()
+                    .get("/api/v1/documents")
+                    .then()
+                    .statusCode(not(is(429)));
+        }
     }
 
     @Test
-    @DisplayName("Should allow public endpoints to bypass rate limit")
-    void testPublicEndpointBypassRateLimit() {
-        String loginBody = "{\"email\": \"test@example.com\", \"password\": \"password123\"}";
+    @DisplayName("Should allow health endpoint without rate limit")
+    void testHealthBypassesRateLimit() {
         given()
-                .contentType("application/json")
-                .body(loginBody)
                 .when()
-                .post("/api/auth/login")
+                .get("/q/health/live")
                 .then()
-                .statusCode(anyOf(is(200), is(400), is(422))); // No rate limit check
+                .statusCode(not(is(429)));
     }
 }

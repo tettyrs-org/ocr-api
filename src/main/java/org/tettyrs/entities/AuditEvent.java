@@ -1,7 +1,7 @@
 package org.tettyrs.entities;
 
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,7 +21,12 @@ import java.time.LocalDateTime;
 
 @NoArgsConstructor
 
-public class AuditEvent extends PanacheEntity {
+public class AuditEvent extends PanacheEntityBase {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public Long id;
+
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_id", nullable = false)

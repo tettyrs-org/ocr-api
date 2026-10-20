@@ -20,17 +20,26 @@ public class S3Service {
     @ConfigProperty(name = "tettyrs.s3.bucket")
     String bucketName;
 
+    // Kosong = tidak mengirim header enkripsi (MinIO lokal tanpa KMS). Diisi AES256 di produksi.
+    // Optional, karena SmallRye menganggap string kosong sebagai tidak ada, sehingga String dengan default "" gagal dimuat.
+    @ConfigProperty(name = "tettyrs.s3.sse")
+    java.util.Optional<String> serverSideEncryption;
+
     // Upload
     public String uploadFile(String key, InputStream fileStream, Long fileSize, String contentType){
         try {
             LOGGER.info("Uploading file to S3: key=" + key + ", bucket=" + bucketName + ", fileSize=" + fileSize);
 
-            PutObjectRequest putRequest = PutObjectRequest.builder()
+            PutObjectRequest.Builder request = PutObjectRequest.builder()
                     .bucket(bucketName)
                     .key(key)
                     .contentType(contentType)
-                    .contentLength(fileSize)
-                    .build();
+                    .contentLength(fileSize);
+            serverSideEncryption
+                    .map(String::trim)
+                    .filter(v -> !v.isEmpty())
+                    .ifPresent(v -> request.serverSideEncryption(ServerSideEncryption.fromValue(v)));
+            PutObjectRequest putRequest = request.build();
 
             s3Client.putObject(putRequest, RequestBody.fromInputStream(fileStream, fileSize));
             String s3Path = buildS3Path(key);

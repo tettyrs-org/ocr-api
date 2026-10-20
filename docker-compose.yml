@@ -79,8 +79,11 @@ services:
       - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
       - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
       - QUARKUS_PROFILE=dev
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
+      - INTERNAL_TOKEN=${INTERNAL_TOKEN}
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,6 +91,61 @@ services:
         condition: service_started
       redis:
         condition: service_healthy
+    networks:
+      - ocr-network
+
+  # OCR engine (Tesseract). Hanya jaringan internal; tidak dipublikasikan ke host.
+  ocr-engine:
+    build:
+      context: ../ocr-engine
+      dockerfile: Dockerfile
+    image: ocr-engine-img
+    container_name: ocr-engine
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Jakarta
+      - OCR_SERVICE_NAME=ocr-engine
+      - OCR_SERVICE_VERSION=0.1.0
+      - OCR_ENVIRONMENT=docker
+      - OCR_HOST=0.0.0.0
+      - OCR_PORT=8000
+      - OCR_LOG_LEVEL=INFO
+      - OCR_ENGINE=tesseract
+      - OCR_TEXT_LAYER_MIN_CHARS=50
+      - TESSERACT_LANG=ind
+      - TESSERACT_CMD=
+      - TESSERACT_DATA_PREFIX=
+      - PREPROCESS_DESKEW=true
+      - PREPROCESS_DENOISE=true
+      - PREPROCESS_PERSPECTIVE=true
+      - PREPROCESS_THRESHOLD=false
+      - PREPROCESS_MORPHOLOGY=false
+      - PREPROCESS_UPSCALE_DPI=300
+      - PDF_RASTER_DPI=300
+      - PDF_MAX_PAGES=15
+    networks:
+      - ocr-network
+
+  # ms-ocr: konsumen job antrian Redis, memanggil ocr-engine, lalu callback ke API (api-spec bagian 8).
+  ms-ocr:
+    build:
+      context: ../ms-ocr
+      dockerfile: Dockerfile
+    image: ms-ocr-img
+    container_name: ms-ocr
+    environment:
+      - TZ=Asia/Jakarta
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - OCR_ENGINE_URL=http://ocr-engine:8000
+      - API_INTERNAL_URL=http://ocr-api:8080
+      - OCR_CONSUMER_NAME=ms-ocr-1
+      - INTERNAL_TOKEN=${INTERNAL_TOKEN}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - ocr-network
 
