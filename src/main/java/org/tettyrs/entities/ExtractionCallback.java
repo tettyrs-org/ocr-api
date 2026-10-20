@@ -1,7 +1,7 @@
 package org.tettyrs.entities;
 
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,7 +20,12 @@ import java.util.UUID;
         @Index(name = "idx_callback_created_at", columnList = "created_at")
 })
 @NoArgsConstructor
-public class ExtractionCallback extends PanacheEntity {
+public class ExtractionCallback extends PanacheEntityBase {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public Long id;
+
 
     @Column(name = "document_id", nullable = false)
     public UUID documentId;

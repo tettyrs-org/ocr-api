@@ -1,6 +1,6 @@
 package org.tettyrs.entities;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import org.tettyrs.entities.enums.ProcessingStatus;
 
@@ -9,7 +9,12 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "ocr_document_processing_results")
-public class DocumentProcessingResult extends PanacheEntity {
+public class DocumentProcessingResult extends PanacheEntityBase {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public Long id;
+
     @Column(name = "document_id")
     public UUID documentId;
 

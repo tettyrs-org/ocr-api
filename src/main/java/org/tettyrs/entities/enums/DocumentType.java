@@ -10,5 +10,12 @@ public enum DocumentType {
     BOOKING_CONFIRMATION,
     HOTEL_RESERVATION,
     FLIGHT_TICKET,
-    OTHER
+    OTHER,
+    // Nilai sesuai database-schema.md dan api-spec bagian 2
+    SURAT_TUGAS,
+    SPD,
+    REIMBURSEMENT_FUEL,
+    PARKING_CARD,
+    RECEIPT,
+    UNKNOWN
 }

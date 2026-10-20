@@ -1,13 +1,9 @@
 package org.tettyrs.api;
 
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.http.ContentType;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import io.quarkus.test.security.TestSecurity;
 import org.junit.jupiter.api.DisplayName;
-import org.tettyrs.service.EnhancedJwtValidator;
-import jakarta.inject.Inject;
-import java.util.Arrays;
+import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -16,67 +12,48 @@ import static org.hamcrest.Matchers.*;
 @DisplayName("DocumentController Integration Tests")
 class DocumentControllerTest {
 
-    @Inject
-    EnhancedJwtValidator jwtValidator;
-
-    private String userToken;
-    private String adminToken;
-
-    @BeforeEach
-    void setup() {
-        userToken = "Bearer " + jwtValidator.generateToken(
-                "user123",
-                "user@example.com",
-                Arrays.asList("USER")
-        );
-
-        adminToken = "Bearer " + jwtValidator.generateToken(
-                "admin123",
-                "admin@example.com",
-                Arrays.asList("ADMIN")
-        );
-    }
-
     @Test
+    @TestSecurity(user = "user123", roles = "USER")
     @DisplayName("Should list documents")
     void testListDocuments() {
         given()
-                .header("Authorization", userToken)
                 .when()
                 .get("/api/v1/documents")
                 .then()
-                .statusCode(anyOf(is(200), is(429), is(500))); // Rate limit may apply
+                .statusCode(anyOf(is(200), is(429), is(500)));
     }
 
     @Test
+    @TestSecurity(user = "user123", roles = "USER")
     @DisplayName("Should get single document")
     void testGetDocument() {
         given()
-                .header("Authorization", userToken)
                 .when()
-                .get("/api/v1/documents/1")
+                .get("/api/v1/documents/550e8400-e29b-41d4-a716-446655440000")
                 .then()
                 .statusCode(anyOf(is(200), is(404), is(500)));
     }
 
     @Test
+    @TestSecurity(user = "user123", roles = "USER")
     @DisplayName("Should reject reprocess without ADMIN role")
     void testReprocessNeedsAdmin() {
         given()
-                .header("Authorization", userToken)
+                .contentType("application/json")
                 .when()
-                .post("/api/v1/documents/1/reprocess")
+                .post("/api/v1/documents/550e8400-e29b-41d4-a716-446655440000/reprocess")
                 .then()
-                .statusCode(anyOf(is(403), is(500))); // Auth check or endpoint error
+                .statusCode(403);
     }
 
     @Test
+    @TestSecurity(user = "admin123", roles = "ADMIN")
     @DisplayName("Should allow ADMIN to reprocess document")
     void testAdminCanReprocess() {
         given()
-                .header("Authorization", adminToken)
+                .contentType("application/json")
                 .when()
-                .post("/api/v1/documents/1/reprocess")
+                .post("/api/v1/documents/550e8400-e29b-41d4-a716-446655440000/reprocess")
                 .then()
                 .statusCode(anyOf(is(202), is(404), is(500)));
     }
@@ -89,5 +66,16 @@ class DocumentControllerTest {
                 .get("/api/v1/documents")
                 .then()
                 .statusCode(401);
+    }
+
+    @Test
+    @TestSecurity(user = "user123", roles = "USER")
+    @DisplayName("Processing status hanya untuk pemilik: dokumen yang bukan milik pengguna dijawab 404")
+    void testProcessingStatusNotOwnedIs404() {
+        given()
+                .when()
+                .get("/api/v1/documents/550e8400-e29b-41d4-a716-446655440000/processing-status")
+                .then()
+                .statusCode(404);
     }
 }

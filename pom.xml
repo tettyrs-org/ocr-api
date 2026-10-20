@@ -58,6 +58,10 @@
       <artifactId>quarkus-cache</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-scheduler</artifactId>
+    </dependency>
+    <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
       <version>2.25.0</version>
@@ -80,6 +84,12 @@
       <artifactId>guava</artifactId>
       <version>33.0.0-jre</version>
     </dependency>
+    <!-- Menghitung jumlah halaman PDF di server (api-spec bagian 2). Batas halaman tidak boleh ditebak. -->
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>pdfbox</artifactId>
+      <version>3.0.3</version>
+    </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
@@ -89,6 +99,10 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-redis-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-oidc</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -114,6 +128,11 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-test-security</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -161,6 +180,9 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M9</version>
+        <configuration>
+          <argLine>-Xmx768m -XX:+UseSerialGC</argLine>
+        </configuration>
       </plugin>
     </plugins>
   </build>

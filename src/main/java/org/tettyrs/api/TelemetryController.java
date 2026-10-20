@@ -1,6 +1,5 @@
 package org.tettyrs.api;
 
-import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 import org.tettyrs.dto.ApiResponse;

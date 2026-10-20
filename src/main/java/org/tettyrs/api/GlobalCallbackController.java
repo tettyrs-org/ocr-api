@@ -11,11 +11,9 @@ import org.tettyrs.dto.enums.ErrorCode;
 import org.tettyrs.entities.Document;
 import org.tettyrs.entities.ExtractionCallback;
 import org.tettyrs.entities.enums.CallbackEventType;
-import org.tettyrs.entities.enums.CallbackStatus;
 import org.tettyrs.service.CallbackService;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Path("/api/v1/callbacks")

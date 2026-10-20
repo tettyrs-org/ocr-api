@@ -13,11 +13,15 @@ RUN sed -i 's/\r$//' ./mvnw && chmod +x ./mvnw && ./mvnw clean package -DskipTes
 # Runtime stage
 FROM eclipse-temurin:17-jre-alpine
 
+RUN addgroup -S app && adduser -S -G app app && mkdir -p /app/logs && chown app:app /app/logs
+
 WORKDIR /app
 COPY --from=builder /build/target/quarkus-app/lib/ ./lib/
 COPY --from=builder /build/target/quarkus-app/*.jar ./
 COPY --from=builder /build/target/quarkus-app/app/ ./app/
 COPY --from=builder /build/target/quarkus-app/quarkus/ ./quarkus/
+
+USER app
 
 EXPOSE 8081
 

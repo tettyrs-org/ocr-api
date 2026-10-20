@@ -1,50 +1,52 @@
 package org.tettyrs.api;
 
-import jakarta.resource.spi.SecurityException;
+import io.quarkus.logging.Log;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
-
-import io.quarkus.logging.Log;
 import org.tettyrs.dto.ApiResponse;
 import org.tettyrs.dto.enums.ErrorCode;
 
 @Provider
 public class GlobalExceptionHandler implements ExceptionMapper<Exception> {
 
-
     @Override
     public Response toResponse(Exception e) {
-        Log.error("Unhandled exception", e);
+        if (e instanceof WebApplicationException web) {
+            return fromWebException(web);
+        }
 
-        if (e instanceof IllegalArgumentException){
-            ApiResponse<Void> response = ApiResponse.error(
-                    ErrorCode.VALIDATION_ERROR.code,
-                    e.getMessage());
-            return Response
-                    .status(ErrorCode.VALIDATION_ERROR.httpStatus)
-                    .entity(response)
-                    .build();
+        if (e instanceof IllegalArgumentException) {
+            Log.warn("Invalid argument: " + e.getMessage());
+            return error(ErrorCode.VALIDATION_ERROR, e.getMessage());
         }
 
         if (e instanceof SecurityException) {
-            ApiResponse<Void> response = ApiResponse.error(
-                    ErrorCode.UNAUTHENTICATED.code,
-                    "Authentication failed"
-            );
-            return Response
-                    .status(ErrorCode.UNAUTHENTICATED.httpStatus)
-                    .entity(response)
-                    .build();
+            Log.warn("Security exception: " + e.getMessage());
+            return error(ErrorCode.UNAUTHENTICATED, "Authentication failed");
         }
-        ApiResponse<Void> response = ApiResponse.error(
-                ErrorCode.INTERNAL_ERROR.code,
-                "An unexpected error occured"
-        );
-        return Response
-                .status(ErrorCode.INTERNAL_ERROR.httpStatus)
-                .entity(response)
-                .build();
 
+        Log.error("Unhandled exception", e);
+        return error(ErrorCode.INTERNAL_ERROR, "An unexpected error occurred");
+    }
+
+    private Response fromWebException(WebApplicationException web) {
+        int status = web.getResponse() != null ? web.getResponse().getStatus() : 500;
+
+        if (status >= 500) {
+            Log.error("Server error", web);
+            return error(ErrorCode.INTERNAL_ERROR, "An unexpected error occurred");
+        }
+
+        Log.warn("Client error " + status + ": " + web.getMessage());
+        ErrorCode code = status == 404 ? ErrorCode.NOT_FOUND : ErrorCode.VALIDATION_ERROR;
+        ApiResponse<Void> body = ApiResponse.error(code.code, code.description);
+        return Response.status(status).entity(body).build();
+    }
+
+    private Response error(ErrorCode code, String message) {
+        ApiResponse<Void> body = ApiResponse.error(code.code, message);
+        return Response.status(code.httpStatus).entity(body).build();
     }
 }

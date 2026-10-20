@@ -1,13 +1,9 @@
 package org.tettyrs.api;
 
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.RestAssured;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import io.quarkus.test.security.TestSecurity;
 import org.junit.jupiter.api.DisplayName;
-import org.tettyrs.service.EnhancedJwtValidator;
-import jakarta.inject.Inject;
-import java.util.Arrays;
+import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -16,48 +12,20 @@ import static org.hamcrest.Matchers.*;
 @DisplayName("AuthorizationFilter Tests")
 class AuthorizationFilterTest {
 
-    @Inject
-    EnhancedJwtValidator jwtValidator;
-
-    private String adminToken;
-    private String userToken;
-    private String viewerToken;
-
-    @BeforeEach
-    void setup() {
-        adminToken = "Bearer " + jwtValidator.generateToken(
-                "admin123",
-                "admin@example.com",
-                Arrays.asList("ADMIN")
-        );
-
-        userToken = "Bearer " + jwtValidator.generateToken(
-                "user123",
-                "user@example.com",
-                Arrays.asList("USER")
-        );
-
-        viewerToken = "Bearer " + jwtValidator.generateToken(
-                "viewer123",
-                "viewer@example.com",
-                Arrays.asList("VIEWER")
-        );
-    }
-
     @Test
-    @DisplayName("Should allow request with valid token")
-    void testValidTokenAllowed() {
+    @TestSecurity(user = "user123", roles = "USER")
+    @DisplayName("Should allow request with valid identity")
+    void testValidIdentityAllowed() {
         given()
-                .header("Authorization", userToken)
                 .when()
                 .get("/api/v1/documents")
                 .then()
-                .statusCode(anyOf(is(200), is(429), is(500))); // Rate limit or service error
+                .statusCode(not(anyOf(is(401), is(403))));
     }
 
     @Test
-    @DisplayName("Should reject request without auth header")
-    void testNoAuthHeaderRejected() {
+    @DisplayName("Should reject request without authentication")
+    void testNoAuthRejected() {
         given()
                 .when()
                 .get("/api/v1/documents")
@@ -67,7 +35,7 @@ class AuthorizationFilterTest {
     }
 
     @Test
-    @DisplayName("Should reject request with invalid token")
+    @DisplayName("Should reject request with invalid token in test profile")
     void testInvalidTokenRejected() {
         given()
                 .header("Authorization", "Bearer invalid.token.here")
@@ -79,56 +47,57 @@ class AuthorizationFilterTest {
     }
 
     @Test
+    @TestSecurity(user = "admin123", roles = "ADMIN")
     @DisplayName("Should allow ADMIN to access admin endpoints")
     void testAdminAccessAdminEndpoint() {
         given()
-                .header("Authorization", adminToken)
                 .when()
-                .post("/api/v1/documents/123/reprocess")
+                .post("/api/v1/documents/550e8400-e29b-41d4-a716-446655440000/reprocess")
                 .then()
-                .statusCode(anyOf(is(202), is(404), is(500))); // Auth passes, API may fail
+                .statusCode(not(anyOf(is(401), is(403))));
     }
 
     @Test
+    @TestSecurity(user = "user123", roles = "USER")
     @DisplayName("Should reject USER from admin-only endpoints")
     void testUserRejectedFromAdminEndpoint() {
         given()
-                .header("Authorization", userToken)
                 .when()
-                .post("/api/v1/documents/123/reprocess")
+                .contentType("application/json")
+                .post("/api/v1/documents/550e8400-e29b-41d4-a716-446655440000/reprocess")
                 .then()
-                .statusCode(anyOf(is(403), is(500))); // Auth check or endpoint error
+                .statusCode(403);
     }
 
     @Test
+    @TestSecurity(user = "user123", roles = "USER")
     @DisplayName("Should allow USER to access user endpoints")
     void testUserAccessUserEndpoint() {
         given()
-                .header("Authorization", userToken)
                 .when()
                 .get("/api/v1/documents")
                 .then()
-                .statusCode(anyOf(is(200), is(429), is(500))); // Rate limit may apply
+                .statusCode(not(anyOf(is(401), is(403))));
     }
 
     @Test
+    @TestSecurity(user = "viewer123", roles = "VIEWER")
     @DisplayName("Should allow VIEWER to access read-only endpoints")
     void testViewerAccessReadEndpoint() {
         given()
-                .header("Authorization", viewerToken)
                 .when()
-                .get("/api/v1/documents/123")
+                .get("/api/v1/documents/550e8400-e29b-41d4-a716-446655440000")
                 .then()
-                .statusCode(anyOf(is(200), is(404), is(500)));
+                .statusCode(not(anyOf(is(401), is(403))));
     }
 
     @Test
-    @DisplayName("Should allow public endpoints without auth")
-    void testPublicEndpointNoAuth() {
+    @DisplayName("Should allow health endpoint without authentication")
+    void testHealthNoAuth() {
         given()
                 .when()
-                .post("/api/auth/login")
+                .get("/q/health/live")
                 .then()
-                .statusCode(anyOf(is(200), is(400), is(422), is(500))); // May fail for various reasons
+                .statusCode(not(anyOf(is(401), is(403))));
     }
 }
