@@ -59,9 +59,15 @@ public class Document extends PanacheEntityBase {
     @Column(nullable = false, name = "doc_ref", unique = true, length = 12)
     public String docRef;
 
-    // Kategori dari S4a: identity | reimburse | other. Menentukan cara pemrosesan.
+    // Kategori dari S4a: identity | reimburse | other | auto. Menentukan cara pemrosesan. `auto` diganti
+    // menjadi salah satu dari tiga kategori lain setelah jenisnya dikenali dari isi berkas.
     @Column(name = "category", length = 16)
     public String category;
+
+    // Berkas di S3 terenkripsi di aplikasi (FieldCipher). Dicatat terpisah dari kategori, karena kategori
+    // `auto` baru diketahui setelah berkas disimpan.
+    @Column(nullable = false, name = "stored_encrypted")
+    public boolean storedEncrypted;
 
     // Field hasil ekstraksi (JSON). Untuk identitas diri, dienkripsi (FieldCipher).
     @Column(name = "extracted_json", columnDefinition = "TEXT")

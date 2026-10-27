@@ -121,7 +121,8 @@ public class DocumentService extends PanacheEntity {
         //upload to s3
         // KTP: berkas dienkripsi di aplikasi sebelum disimpan (sampai KES aktif, lihat kes-minio.md).
         byte[] content = readAll(fileStream);
-        if ("identity".equals(doc.category)) content = fieldCipher.encryptBytes(content);
+        doc.storedEncrypted = doc.storedEncrypted || encryptsAtRest(doc.category);
+        if (doc.storedEncrypted) content = fieldCipher.encryptBytes(content);
         String s3Path = s3Service.uploadFile(s3Key, new ByteArrayInputStream(content), (long) content.length, contentType);
         doc.s3Path = s3Path;
         doc.fileSize = fileSize;
@@ -155,7 +156,7 @@ public class DocumentService extends PanacheEntity {
     public record UploadOutcome(Document document, boolean created) {
     }
 
-    private static final Set<String> CATEGORIES = Set.of("identity", "reimburse", "other");
+    private static final Set<String> CATEGORIES = Set.of("identity", "reimburse", "other", "auto");
     private static final String DOC_REF_ALPHABET = "0123456789";
     private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -167,7 +168,7 @@ public class DocumentService extends PanacheEntity {
     public UploadOutcome createFromUpload(String uploader, String category, String docTypeHint,
                                           String idempotencyKey, String filename, byte[] bytes) {
         if (category == null || !CATEGORIES.contains(category)) {
-            throw new IllegalArgumentException("category harus identity, reimburse, atau other");
+            throw new IllegalArgumentException("category harus identity, reimburse, other, atau auto");
         }
 
         // Percobaan ulang dengan kunci yang sama mengembalikan dokumen yang sama, tanpa memproses ulang.
@@ -194,11 +195,13 @@ public class DocumentService extends PanacheEntity {
         doc.category = category;
         doc.uploadIdempotencyKey = idempotencyKey;
         doc.docRef = newDocRef();
+        doc.storedEncrypted = encryptsAtRest(category);
         doc.persist();
 
         String s3Key = FilePurgeService.s3KeyFor(doc.id, doc.filename);
-        // KTP: berkas dienkripsi di aplikasi sebelum disimpan (sampai KES aktif, lihat kes-minio.md).
-        byte[] stored = "identity".equals(doc.category) ? fieldCipher.encryptBytes(bytes) : bytes;
+        // KTP dan unggahan auto: berkas dienkripsi di aplikasi sebelum disimpan (sampai KES aktif, lihat kes-minio.md).
+        // Unggahan auto belum diketahui jenisnya, jadi dienkripsi sejak awal supaya KTP tidak tersimpan teks polos.
+        byte[] stored = doc.storedEncrypted ? fieldCipher.encryptBytes(bytes) : bytes;
         doc.s3Path = s3Service.uploadFile(s3Key, new ByteArrayInputStream(stored), (long) stored.length, check.kind().mimeType);
         doc.persist();
 
@@ -213,6 +216,24 @@ public class DocumentService extends PanacheEntity {
         } catch (java.io.IOException e) {
             throw new java.io.UncheckedIOException(e);
         }
+    }
+
+    /** Berkas dienkripsi saat disimpan untuk KTP dan unggahan auto (jenisnya belum tentu KTP). */
+    static boolean encryptsAtRest(String category) {
+        return "identity".equals(category) || "auto".equals(category);
+    }
+
+    /**
+     * Kategori pemrosesan dari jenis yang dikenali. Jenis yang tidak dikenali menjadi `other`, bukan ditebak
+     * ke reimburse: dokumen lain tidak mendapat isian terstruktur, sama seperti unggahan `other`.
+     */
+    public static String categoryFor(DocumentType type) {
+        if (type == null) return "other";
+        return switch (type) {
+            case IDENTITY_CARD -> "identity";
+            case OTHER, UNKNOWN -> "other";
+            default -> "reimburse";
+        };
     }
 
     /** Jenis dari hint hanya diterima bila sesuai kategori. Di luar itu ditolak, bukan ditebak. */
@@ -232,6 +253,7 @@ public class DocumentService extends PanacheEntity {
                     || type == DocumentType.SURAT_TUGAS
                     || type == DocumentType.SPD;
             case "other" -> type == DocumentType.OTHER;
+            // auto: jenis ditentukan dari isi berkas, jadi hint tidak diterima.
             default -> false;
         };
         if (!allowed) {

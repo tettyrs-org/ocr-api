@@ -70,6 +70,7 @@ public class EncryptionBackfillService {
                         byte[] enc = fieldCipher.encryptBytes(bytes);
                         s3Service.uploadFile(FilePurgeService.s3KeyFor(d.id, d.filename),
                                 new ByteArrayInputStream(enc), (long) enc.length, d.mimeType);
+                        d.storedEncrypted = true;
                     }
                 }
             }

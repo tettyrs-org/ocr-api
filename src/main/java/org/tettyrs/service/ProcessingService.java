@@ -49,9 +49,12 @@ public class ProcessingService {
         return DocumentType.RECEIPT;
     }
 
-    /** Kategori yang field-nya diekstrak ms-ocr lewat antrean (KTP dan reimburse). Kategori lain diproses lokal. */
+    /**
+     * Kategori yang field-nya diekstrak ms-ocr lewat antrean (KTP, reimburse, dan auto). Auto dikenali ms-ocr
+     * dari isi berkas. Kategori lain diproses lokal.
+     */
     static boolean usesEngineExtraction(String category) {
-        return "identity".equals(category) || "reimburse".equals(category);
+        return "identity".equals(category) || "reimburse".equals(category) || "auto".equals(category);
     }
 
     // Transaksi di sini, bukan di requeueForExtraction: pemanggilan dari dalam kelas melewati proxy,

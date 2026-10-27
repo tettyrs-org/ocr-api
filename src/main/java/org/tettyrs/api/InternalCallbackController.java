@@ -102,6 +102,11 @@ public class InternalCallbackController {
                 result.summary = null;
                 doc.extractedJson = fieldsJson;
                 doc.documentType = parseDocType(req.docType, doc.documentType);
+                // Unggahan auto: kategori ditetapkan dari jenis yang dikenali ms-ocr, supaya pemrosesan dan
+                // tampilan berikutnya memakai aturan kategori itu.
+                if ("auto".equals(doc.category)) {
+                    doc.category = org.tettyrs.service.DocumentService.categoryFor(doc.documentType);
+                }
                 doc.processingStatus = ProcessingStatus.COMPLETED;
             } else {
                 return error(ErrorCode.VALIDATION_ERROR, "status tidak dikenal");

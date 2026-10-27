@@ -467,8 +467,8 @@ public class DocumentController {
 
             String s3Key = s3Service.extractKeyFromPath(doc.s3Path);
             InputStream fileStream = s3Service.downloadFile(s3Key);
-            if ("identity".equals(doc.category)) {
-                // KTP disimpan terenkripsi di aplikasi. Didekripsi hanya untuk pemilik dokumen.
+            if (doc.storedEncrypted) {
+                // Berkas disimpan terenkripsi di aplikasi. Didekripsi hanya untuk pemilik dokumen.
                 fileStream = new java.io.ByteArrayInputStream(
                         fieldCipher.decryptBytes(org.tettyrs.service.DocumentService.readAll(fileStream)));
             }

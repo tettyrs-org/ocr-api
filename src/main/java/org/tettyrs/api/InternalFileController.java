@@ -45,8 +45,8 @@ public class InternalFileController {
             return error(ErrorCode.DOCUMENT_NOT_FOUND, "Document not found");
         }
         InputStream stream = s3Service.downloadFile(s3Service.extractKeyFromPath(doc.s3Path));
-        if ("identity".equals(doc.category)) {
-            // KTP terenkripsi di aplikasi. ms-ocr menerima berkas plain lewat jalur internal ini.
+        if (doc.storedEncrypted) {
+            // Berkas terenkripsi di aplikasi (KTP atau unggahan auto). ms-ocr menerima berkas plain lewat jalur internal ini.
             stream = new java.io.ByteArrayInputStream(
                     fieldCipher.decryptBytes(org.tettyrs.service.DocumentService.readAll(stream)));
         }
