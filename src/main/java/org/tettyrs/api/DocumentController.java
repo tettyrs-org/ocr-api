@@ -50,6 +50,9 @@ public class DocumentController {
     org.tettyrs.security.CurrentUser currentUser;
 
     @Inject
+    org.tettyrs.service.AuditEventService auditEventService;
+
+    @Inject
     org.tettyrs.service.JobQueue jobQueue;
 
     @Inject
@@ -73,7 +76,7 @@ public class DocumentController {
             @Context UriInfo uriInfo) {
 
         try {
-            DocumentResponse docResponse = documentService.createDocument(request);
+            DocumentResponse docResponse = documentService.createDocument(request, currentUser.userId());
             ApiResponse<DocumentResponse> response = ApiResponse.success(docResponse,
                     new ApiResponse.ResponseMeta(uriInfo.getPath())
             );
@@ -317,11 +320,10 @@ public class DocumentController {
                         .build();
             }
 
-            String contentType = file.contentType() != null ? file.contentType() : "application/octet-stream";
             Long fileSize = Files.size(file.filePath());
             InputStream fileStream = Files.newInputStream(file.filePath());
 
-            DocumentResponse docResponse = documentService.uploadFile(documentId, fileStream, fileSize, contentType);
+            DocumentResponse docResponse = documentService.uploadFile(documentId, fileStream, fileSize);
             // Berkas baru harus diekstraksi ulang; hasil lama dibuang dan dokumen diantrekan lagi.
             documentService.resetForReprocessing(documentId);
             try {
@@ -465,6 +467,9 @@ public class DocumentController {
                         .build();
             }
 
+            // Unduhan berkas oleh admin dicatat, karena berkas ini memuat data pribadi (KTP).
+            auditEventService.logAuditEvent(documentId, org.tettyrs.entities.enums.AuditAction.FILE_DOWNLOADED_BY_ADMIN,
+                    currentUser.userId(), "Berkas diunduh oleh admin");
             String s3Key = s3Service.extractKeyFromPath(doc.s3Path);
             InputStream fileStream = s3Service.downloadFile(s3Key);
             if (doc.storedEncrypted) {
@@ -536,6 +541,10 @@ public class DocumentController {
 
         try {
             Document doc = Document.findById(documentId);
+            // Dokumen milik orang lain diperlakukan seperti tidak ada, supaya keberadaannya tidak bocor.
+            if (doc != null && !currentUser.hasAnyRole("ADMIN") && !currentUser.userId().equals(doc.createdBy)) {
+                doc = null;
+            }
             if (doc == null) {
                 ApiResponse<Void> response = ApiResponse.error(
                         ErrorCode.DOCUMENT_NOT_FOUND.code,

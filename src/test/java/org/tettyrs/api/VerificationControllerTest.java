@@ -18,15 +18,16 @@ class VerificationControllerTest {
 
     @Test
     @TestSecurity(user = "user123", roles = "USER")
-    @DisplayName("Should list verifications for document")
+    @DisplayName("Should not list verifications of a document the user does not own")
     void testListVerifications() {
+        // Dokumen uji bukan milik user123: harus 404 (sama dengan dokumen yang tidak ada), bukan daftar verifikasi.
         given()
                 .queryParam("page", 1)
                 .queryParam("limit", 20)
                 .when()
                 .get("/api/v1/documents/" + testDocumentId + "/verifications")
                 .then()
-                .statusCode(anyOf(is(200), is(500)));
+                .statusCode(404);
     }
 
     @Test

@@ -1,11 +1,13 @@
 package org.tettyrs.api;
 
+import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 import org.tettyrs.dto.ApiResponse;
 import org.tettyrs.dto.VerificationResponse;
 import org.tettyrs.dto.enums.ErrorCode;
 import org.tettyrs.entities.DocumentVerification;
+import org.tettyrs.service.DocumentService;
 
 import java.util.List;
 import java.util.UUID;
@@ -16,6 +18,9 @@ import java.util.stream.Collectors;
 @Consumes(MediaType.APPLICATION_JSON)
 public class VerificationController extends BaseController {
 
+    @Inject
+    DocumentService documentService;
+
     @GET
     public Response listVerifications(
             @PathParam("documentId") UUID documentId,
@@ -23,6 +28,13 @@ public class VerificationController extends BaseController {
             @QueryParam("limit") Integer limit,
             @Context UriInfo uriInfo
     ) {
+
+        // Hanya pemilik dokumen yang boleh melihat hasil verifikasinya; orang lain mendapat 404 seperti dokumen tidak ada.
+        if (documentService.findOwned(documentId, currentUser.userId()) == null) {
+            return Response.status(ErrorCode.DOCUMENT_NOT_FOUND.httpStatus)
+                    .entity(ApiResponse.error(ErrorCode.DOCUMENT_NOT_FOUND.code, "Document not found"))
+                    .build();
+        }
 
         try {
             page = page != null ? page : 1;
@@ -65,6 +77,12 @@ public class VerificationController extends BaseController {
             @PathParam("verificationId") Long verificationId,
             @Context UriInfo uriInfo
     ) {
+
+        if (documentService.findOwned(documentId, currentUser.userId()) == null) {
+            return Response.status(ErrorCode.DOCUMENT_NOT_FOUND.httpStatus)
+                    .entity(ApiResponse.error(ErrorCode.DOCUMENT_NOT_FOUND.code, "Document not found"))
+                    .build();
+        }
 
         try {
             DocumentVerification verification = DocumentVerification.find(

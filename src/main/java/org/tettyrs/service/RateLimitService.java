@@ -24,7 +24,11 @@ public class RateLimitService {
             Optional<String> retryAfter
     ){}
 
-    public RateLimitResult checkLimit(String userId, String endpoint, int limitPerHour){
+    /**
+     * @param failClosed true: bila Redis gagal, request ditolak (untuk endpoint dengan batas khusus).
+     *                   false: bila Redis gagal, request diizinkan (untuk batas umum agar layanan tetap jalan).
+     */
+    public RateLimitResult checkLimit(String userId, String endpoint, int limitPerHour, boolean failClosed){
         String key = buildKey(userId, endpoint);
         StringCommands<String, String> commands = redisDataSource.string(String.class);
 
@@ -56,6 +60,9 @@ public class RateLimitService {
             return new RateLimitResult(true, remaining, resetAt, Optional.empty());
         }catch (Exception e){
             Log.error("Rate limit check failed for user: "+userId+", endpoint: "+endpoint, e);
+            if (failClosed) {
+                return new RateLimitResult(false, 0, System.currentTimeMillis() + WINDOW_SECONDS * 1000, Optional.of("60"));
+            }
             return new RateLimitResult(true, limitPerHour -1, System.currentTimeMillis() + WINDOW_SECONDS * 1000, Optional.empty());
         }
     }

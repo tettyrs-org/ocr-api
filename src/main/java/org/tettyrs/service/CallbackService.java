@@ -14,6 +14,47 @@ import java.util.UUID;
 @ApplicationScoped
 public class CallbackService {
 
+    private static final java.util.regex.Pattern IPV4 =
+            java.util.regex.Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
+
+    /**
+     * URL webhook yang aman dari SSRF: harus HTTPS, tanpa kredensial di URL, dan host bukan localhost atau alamat
+     * privat/loopback/link-local (termasuk metadata cloud 169.254.x.x). Pemeriksaan literal host saja; DNS tidak
+     * di-resolve di sini.
+     */
+    public static boolean urlWebhookAman(String url) {
+        if (url == null || url.isBlank()) return false;
+        java.net.URI uri;
+        try {
+            uri = new java.net.URI(url.trim());
+        } catch (java.net.URISyntaxException e) {
+            return false;
+        }
+        if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getUserInfo() != null) return false;
+        String host = uri.getHost();
+        if (host == null || host.isBlank()) return false;
+        String h = host.toLowerCase(java.util.Locale.ROOT);
+        if (h.endsWith(".")) h = h.substring(0, h.length() - 1); // localhost. sama dengan localhost
+        if (h.isEmpty()) return false;
+        if (h.equals("localhost") || h.endsWith(".localhost") || h.endsWith(".local") || h.endsWith(".internal")) return false;
+        if (h.startsWith("[") || h.contains(":")) return false; // alamat IPv6 literal ditolak
+        if (IPV4.matcher(h).matches()) {
+            String[] o = h.split("\\.");
+            int a = Integer.parseInt(o[0]);
+            int b = Integer.parseInt(o[1]);
+            if (a == 10 || a == 127 || a == 0 || a >= 224) return false;
+            if (a == 172 && b >= 16 && b <= 31) return false;
+            if (a == 192 && b == 168) return false;
+            if (a == 169 && b == 254) return false;
+            if (a == 100 && b >= 64 && b <= 127) return false; // CGNAT
+        } else {
+            // TLD sungguhan selalu huruf. Angka saja (2130706433, 127.1) atau 0x... adalah cara lain menulis IPv4: ditolak.
+            String label = h.substring(h.lastIndexOf('.') + 1);
+            if (label.matches("[0-9]+") || label.startsWith("0x")) return false;
+        }
+        return true;
+    }
+
     /**
      * Create webhook callback untuk document
      */
@@ -25,8 +66,8 @@ public class CallbackService {
             String payload) {
 
         try {
-            // Validate webhook URL format
-            if (webhookUrl == null || !webhookUrl.startsWith("http")) {
+            // Hanya URL HTTPS publik yang diterima. Lihat urlWebhookAman.
+            if (!urlWebhookAman(webhookUrl)) {
                 throw new IllegalArgumentException("Invalid webhook URL");
             }
 
@@ -40,8 +81,9 @@ public class CallbackService {
             callback.maxRetries = 3;
 
             callback.persist();
+            // Hanya host yang dicatat: query string URL pelanggan bisa memuat token.
             Log.info("Callback created for document " + documentId +
-                    " - event: " + eventType + ", URL: " + webhookUrl);
+                    " - event: " + eventType + ", host: " + java.net.URI.create(webhookUrl.trim()).getHost());
 
             return callback;
         } catch (Exception e) {

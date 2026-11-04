@@ -28,7 +28,7 @@ public class RateLimitingFilter implements ContainerRequestFilter {
             Map.entry("POST /api/v1/documents", 20),
             Map.entry("POST /api/v1/documents/{id}/reprocess", 5),
             Map.entry("/api/telemetry/timings", 30),
-            Map.entry("/api/documents/{id}/verification", 50)
+            Map.entry("PUT /api/v1/documents/{id}/verification", 50)
     );
 
     // GET dipakai polling status (tiap ~2 detik) dan daftar dokumen. 300 per jam habis dalam 10 menit.
@@ -53,6 +53,8 @@ public class RateLimitingFilter implements ContainerRequestFilter {
         String endpoint = normalizeEndpoint(path);
         String key = method + " " + endpoint;
         Integer limit = ENDPOINT_LIMITS.containsKey(key) ? ENDPOINT_LIMITS.get(key) : ENDPOINT_LIMITS.get(endpoint);
+        // Endpoint dengan batas khusus (unggah, proses ulang, tinjau) ditolak bila Redis gagal; GET umum tetap diizinkan.
+        boolean limited = limit != null;
         if (limit == null) {
             limit = METHOD_LIMITS.getOrDefault(method, 300);
         }
@@ -60,7 +62,8 @@ public class RateLimitingFilter implements ContainerRequestFilter {
         RateLimitService.RateLimitResult result = rateLimitService.checkLimit(
                 userId,
                 key,
-                limit
+                limit,
+                limited
         );
 
         if (!result.allowed()) {
@@ -82,7 +85,9 @@ public class RateLimitingFilter implements ContainerRequestFilter {
     }
 
     private String normalizeEndpoint(String path) {
-        return path
+        // Kunci harus selalu berawalan "/" agar cocok dengan ENDPOINT_LIMITS, apa pun bentuk getPath() dari framework.
+        String normalized = path.startsWith("/") ? path : "/" + path;
+        return normalized
                 .replaceAll("/\\d+(/|$)", "/{id}$1")
                 .replaceAll("/[a-f0-9-]{36}(/|$)", "/{id}$1")
                 .replaceAll("\\?.*$", "");

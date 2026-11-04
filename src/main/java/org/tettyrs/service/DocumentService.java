@@ -36,19 +36,20 @@ public class DocumentService extends PanacheEntity {
     Long maxFileSIzeMb;
 
     @Transactional
-    public DocumentResponse createDocument(DocumentRequest request) {
+    public DocumentResponse createDocument(DocumentRequest request, String uploader) {
         Document doc = new Document();
-        doc.filename = request.filename;
+        doc.filename = baseName(request.filename);
         doc.originalFilename = request.filename;
         doc.fileSize = request.fileSize;
         doc.mimeType = request.mimeType;
         doc.documentType = request.documentType;
         doc.status = DocumentStatus.PENDING;
-        doc.createdBy = request.createdBy;
+        // Pemilik selalu pengguna yang terautentikasi, bukan nilai dari body (created_by di body diabaikan).
+        doc.createdBy = uploader;
         doc.persist();
 
         // log audit event
-        auditEventService.logAuditEvent(doc.id, AuditAction.UPLOADED, request.createdBy, null);
+        auditEventService.logAuditEvent(doc.id, AuditAction.UPLOADED, uploader, null);
 
         return toResponse(doc);
     }
@@ -103,30 +104,34 @@ public class DocumentService extends PanacheEntity {
     }
 
     @Transactional
-    public DocumentResponse uploadFile(UUID documentId, InputStream fileStream, Long fileSize, String contentType){
+    public DocumentResponse uploadFile(UUID documentId, InputStream fileStream, Long fileSize){
         //validation
         if (fileSize > maxFileSIzeMb * 1024 * 1024) {
             throw new IllegalArgumentException("File too large. Max: "+maxFileSIzeMb+ "MB");
-        }
-        if (!isAllowedContentType(contentType)) {
-            throw new IllegalArgumentException("Content-type not allowed: "+contentType);
         }
 
         Document doc = Document.findById(documentId);
         if (doc == null) {
             throw new IllegalArgumentException("Document not found: "+documentId);
         }
+        // Jenis berkas dari isi (magic byte), sama seperti jalur buat dokumen; content-type dari klien tidak dipercaya.
+        byte[] content = readAll(fileStream);
+        UploadValidator.Result check;
+        try {
+            check = UploadValidator.validate(content);
+        } catch (UploadValidator.RejectedException e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
         //s3 generate key
         String s3Key = FilePurgeService.s3KeyFor(documentId, doc.filename);
         //upload to s3
         // KTP: berkas dienkripsi di aplikasi sebelum disimpan (sampai KES aktif, lihat kes-minio.md).
-        byte[] content = readAll(fileStream);
         doc.storedEncrypted = doc.storedEncrypted || encryptsAtRest(doc.category);
         if (doc.storedEncrypted) content = fieldCipher.encryptBytes(content);
-        String s3Path = s3Service.uploadFile(s3Key, new ByteArrayInputStream(content), (long) content.length, contentType);
+        String s3Path = s3Service.uploadFile(s3Key, new ByteArrayInputStream(content), (long) content.length, check.kind().mimeType);
         doc.s3Path = s3Path;
         doc.fileSize = fileSize;
-        doc.mimeType = contentType;
+        doc.mimeType = check.kind().mimeType;
         doc.persist();
 
         //log audit event
@@ -286,16 +291,22 @@ public class DocumentService extends PanacheEntity {
 
     /** Nama berkas aman untuk kunci S3: hanya karakter aman, dengan ekstensi sesuai jenis sebenarnya. */
     private static String safeFilename(String original, UploadValidator.Kind kind) {
-        String base = original == null ? "berkas" : original.replaceAll(".*[/\\\\]", "");
-        base = base.replaceAll("[^A-Za-z0-9._-]", "_");
-        if (base.length() > 120) base = base.substring(base.length() - 120);
-        if (base.isBlank()) base = "berkas";
+        String base = baseName(original);
         String ext = switch (kind) {
             case JPEG -> ".jpg";
             case PNG -> ".png";
             case PDF -> ".pdf";
         };
         return base.toLowerCase().endsWith(ext) ? base : base + ext;
+    }
+
+    /** Nama dasar berkas tanpa path dan tanpa karakter di luar huruf, angka, titik, garis bawah, dan strip. */
+    private static String baseName(String original) {
+        String base = original == null ? "berkas" : original.replaceAll(".*[/\\\\]", "");
+        base = base.replaceAll("[^A-Za-z0-9._-]", "_");
+        if (base.length() > 120) base = base.substring(base.length() - 120);
+        if (base.isBlank()) base = "berkas";
+        return base;
     }
 
     private DocumentResponse toResponse(Document doc) {
@@ -313,13 +324,4 @@ public class DocumentService extends PanacheEntity {
         return response;
     }
 
-    // helper method to validate content type
-    private boolean isAllowedContentType(String contentType){
-        return contentType != null && (
-                contentType.equals("application/pdf") ||
-                contentType.equals("image/jpeg") ||
-                contentType.equals("image/png") ||
-                contentType.equals("application/octet-stream")
-                );
-    }
 }

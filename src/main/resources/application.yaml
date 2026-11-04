@@ -93,6 +93,11 @@ quarkus:
       prometheus:
         enabled: true
 
+  # /q/health dan /q/metrics hanya di port management, tidak di port API yang bisa dijangkau dari luar.
+  management:
+    enabled: true
+    port: ${MANAGEMENT_PORT:9100}
+
 tettyrs:
   s3:
     bucket: ${S3_BUCKET:ocr-documents}

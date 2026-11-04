@@ -96,11 +96,18 @@ public class InvitationService {
         return new Redeemed(inv.uid, user.email);
     }
 
-    /** Mengembalikan undangan dan profil ke keadaan semula bila pemasangan sandi gagal di Firebase. */
+    /**
+     * Mengembalikan undangan dan profil ke keadaan semula bila pemasangan sandi gagal di Firebase.
+     * Hanya berlaku sebentar setelah redeem (RELEASE_WINDOW). Sesudah itu undangan tidak bisa dibuka lagi,
+     * sehingga token yang sudah dipakai tidak bisa dipakai untuk mengubah profil kapan saja.
+     */
     @Transactional
     public void release(String token) {
         Invitation inv = Invitation.find("tokenHash", hash(token)).firstResult();
-        if (inv == null || inv.usedAt == null) throw invalid();
+        if (inv == null || inv.usedAt == null
+                || inv.usedAt.isBefore(OffsetDateTime.now().minus(RELEASE_WINDOW))) {
+            throw invalid();
+        }
         AppUser user = AppUser.findById(inv.uid);
         if (user != null) {
             user.fullName = null;
@@ -116,6 +123,8 @@ public class InvitationService {
         if (inv == null || inv.usedAt != null || inv.expiresAt.isBefore(OffsetDateTime.now())) throw invalid();
         return inv;
     }
+
+    private static final java.time.Duration RELEASE_WINDOW = java.time.Duration.ofMinutes(10);
 
     private static Rejected invalid() {
         return new Rejected(ErrorCode.INVITATION_INVALID, "Tautan undangan tidak valid atau sudah tidak berlaku.", null);

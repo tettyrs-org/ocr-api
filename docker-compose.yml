@@ -9,8 +9,8 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
     volumes:
       - minio_data:/data
     networks:
@@ -26,7 +26,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_INITDB_ARGS="-U postgres"
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
@@ -41,7 +41,7 @@ services:
     image: redis:7-alpine
     container_name: ocr-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     environment:
       - TZ=Asia/Jakarta
       - REDIS_PASSWORD=${REDIS_PASSWORD}

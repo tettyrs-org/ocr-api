@@ -88,7 +88,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         // /api/v1/invitations/* dilindungi token undangan di body (api-spec.md bagian 16).
         return normalized.startsWith("/internal/") ||
                normalized.startsWith("/api/v1/invitations/") ||
-               path.contains("/health") ||
-               path.contains("/metrics");
+               normalized.startsWith("/q/health") ||
+               normalized.startsWith("/q/metrics");
     }
 }
