@@ -128,29 +128,14 @@ All endpoints require authentication except the login endpoint. The API uses bea
 
 ### Getting a Token
 
-The login endpoint doesn't require authentication. In development, any email/password combination is accepted (in production, this would connect to your identity provider):
+The API does not issue tokens. It verifies Firebase ID tokens (OIDC, issuer `https://securetoken.google.com/ocr-wjv-b56b7`, audience `ocr-wjv-b56b7`). Sign in through Firebase Authentication (the web app uses the BFF in `app/`), then send the ID token as a Bearer token:
 
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"alice@example.com","password":"***REMOVED***"}'
+TOKEN="<firebase-id-token>"
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8081/api/v1/documents
 ```
 
-You'll receive a JWT token valid for 24 hours:
-
-```json
-{
-  "token": "<your-jwt-token>",
-  "expires_in": 86400,
-  "token_type": "Bearer"
-}
-```
-
-Save this token and pass it with each request. For convenience, save it as an environment variable:
-
-```bash
-TOKEN="<your-jwt-token-here>"
-```
+Tokens are short-lived. Obtain a new one from Firebase when a request returns 401.
 
 **Never commit tokens to version control.** Keep them in environment variables or a local `.env` file (which is in `.gitignore`).
 
@@ -553,10 +538,22 @@ docker-compose down
 
 This project is maintained by the Tettyrs Organization. See [@tettyrs](https://github.com/tettyrs) for the maintainer profile.
 
+## Known limitations
+
+Listed openly so they are not mistaken for solved problems:
+
+- **Authentication depends on Firebase.** The API verifies Firebase ID tokens and has no local login. Local tests need a real Firebase user or a token issued for that project.
+- **Rate limiting depends on Redis.** Sensitive endpoints reject requests when Redis is unavailable. General limits allow requests in that case, so the service keeps running.
+- **`GET /q/health` returned 404 on the host port (8081) in our local stack.** Use the Docker health status (`docker compose ps`) until this is checked.
+- **Private keys stay local.** `src/main/resources/privateKey.pem` and `key_base64.txt` exist on developer machines. They are git-ignored and must never be committed.
+- **Processing is asynchronous.** An upload returns before OCR finishes. Total time depends on `ms-ocr` and `ocr-engine`. Vision on CPU can add 15 to 40 seconds for an ID card.
+
 ## Related Projects
 
-- [ocr-engine](https://github.com/tettyrs-org/ocr-engine) - Python OCR extraction service
+- [ocr-engine](https://github.com/tettyrs-org/ocr-engine) - Python OCR extraction service (Tesseract, optional vision companion)
 - [ms-ocr](https://github.com/tettyrs-org/ms-ocr) - Java correction and normalization service
+- `app/` - Flutter web app and Backend-for-Frontend (BFF). Kept in the local project folder, not a separate repository
+- [ocr-documents](https://github.com/tettyrs-org/ocr-documents) - Architecture, API specification, and deployment docs (private)
 
 ## Support & Questions
 
