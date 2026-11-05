@@ -45,6 +45,13 @@ public class RateLimitingFilter implements ContainerRequestFilter {
             return;
         }
 
+        // Endpoint undangan tidak punya identitas pengguna. Dibatasi per IP, dan ada batas total untuk seluruh
+        // prefix, supaya pemalsuan header IP tidak bisa mengalahkan pembatasan.
+        if ((path.startsWith("/") ? path : "/" + path).startsWith("/api/v1/invitations/")) {
+            batasiUndangan(requestContext);
+            return;
+        }
+
         if (!currentUser.isAuthenticated()) {
             return;
         }
@@ -82,6 +89,46 @@ public class RateLimitingFilter implements ContainerRequestFilter {
                             .build()
             );
         }
+    }
+
+    private static final int UNDANGAN_PER_IP_PER_JAM = 30;
+    private static final int UNDANGAN_TOTAL_PER_JAM = 600;
+    private static final String ENDPOINT_UNDANGAN = "PUBLIC /api/v1/invitations";
+
+    private void batasiUndangan(ContainerRequestContext requestContext) {
+        RateLimitService.RateLimitResult perIp = rateLimitService.checkLimit(
+                "ip:" + alamatKlien(requestContext), ENDPOINT_UNDANGAN, UNDANGAN_PER_IP_PER_JAM, true);
+        RateLimitService.RateLimitResult total = perIp.allowed()
+                ? rateLimitService.checkLimit("ip:semua", ENDPOINT_UNDANGAN, UNDANGAN_TOTAL_PER_JAM, true)
+                : perIp;
+        if (!total.allowed()) {
+            Log.warn("Rate limit undangan terlampaui");
+            ApiResponse<Void> response = ApiResponse.error(
+                    ErrorCode.RATE_LIMITED.code,
+                    "Rate limit exceeded. Try again in " + total.retryAfter().get() + " seconds");
+            requestContext.abortWith(
+                    Response.status(ErrorCode.RATE_LIMITED.httpStatus)
+                            .header("Retry-After", total.retryAfter().get())
+                            .entity(response)
+                            .build());
+        }
+    }
+
+    /**
+     * Alamat klien untuk pembatasan undangan. Header dari Cloudflare dipakai lebih dulu, lalu X-Forwarded-For
+     * (nilai terakhir, yang ditambahkan proxy tepercaya). Bila keduanya tidak ada, semua dianggap satu klien.
+     */
+    private String alamatKlien(ContainerRequestContext requestContext) {
+        String cf = requestContext.getHeaderString("CF-Connecting-IP");
+        if (cf != null && !cf.isBlank()) {
+            return cf.trim();
+        }
+        String xff = requestContext.getHeaderString("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            String[] bagian = xff.split(",");
+            return bagian[bagian.length - 1].trim();
+        }
+        return "unknown";
     }
 
     private String normalizeEndpoint(String path) {
