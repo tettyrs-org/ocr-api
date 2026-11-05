@@ -77,12 +77,12 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <version>3.14.0</version>
+      <version>3.18.0</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>33.0.0-jre</version>
+      <version>33.7.2-jre</version>
     </dependency>
     <!-- Menghitung jumlah halaman PDF di server (api-spec bagian 2). Batas halaman tidak boleh ditebak. -->
     <dependency>
