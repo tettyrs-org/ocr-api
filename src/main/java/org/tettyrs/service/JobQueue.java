@@ -1,6 +1,8 @@
 package org.tettyrs.service;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Scope;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapSetter;
 import io.quarkus.redis.datasource.RedisDataSource;
@@ -36,14 +38,22 @@ public class JobQueue {
 
     /** Menambahkan job untuk satu dokumen. Mengembalikan id entri stream. */
     public String enqueue(UUID documentId, String category) {
-        StreamCommands<String, String, String> stream = redis.stream(String.class);
-        Map<String, String> payload = new HashMap<>();
-        payload.put("document_id", documentId.toString());
-        payload.put("category", category == null ? "other" : category);
-        payload.put("enqueued_at", Instant.now().toString());
-        GlobalOpenTelemetry.getPropagators().getTextMapPropagator().inject(Context.current(), payload, SETTER);
-        String id = stream.xadd(STREAM, payload);
-        LOG.infof("job dokumen %s masuk antrian (%s)", documentId, id);
-        return id;
+        Span span = GlobalOpenTelemetry.getTracer("api").spanBuilder("job.enqueue").startSpan();
+        try (Scope ignored = span.makeCurrent()) {
+            StreamCommands<String, String, String> stream = redis.stream(String.class);
+            Map<String, String> payload = new HashMap<>();
+            payload.put("document_id", documentId.toString());
+            payload.put("category", category == null ? "other" : category);
+            payload.put("enqueued_at", Instant.now().toString());
+            GlobalOpenTelemetry.getPropagators().getTextMapPropagator().inject(Context.current(), payload, SETTER);
+            String id = stream.xadd(STREAM, payload);
+            LOG.infof("job dokumen %s masuk antrian (%s)", documentId, id);
+            return id;
+        } catch (RuntimeException e) {
+            span.recordException(e);
+            throw e;
+        } finally {
+            span.end();
+        }
     }
 }

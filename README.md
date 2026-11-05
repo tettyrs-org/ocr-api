@@ -548,6 +548,17 @@ Listed openly so they are not mistaken for solved problems:
 - **Private keys stay local.** `src/main/resources/privateKey.pem` and `key_base64.txt` exist on developer machines. They are git-ignored and must never be committed.
 - **Processing is asynchronous.** An upload returns before OCR finishes. Total time depends on `ms-ocr` and `ocr-engine`. Vision on CPU can add 15 to 40 seconds for an ID card.
 
+## Tracing
+
+OpenTelemetry tracing is off by default. Enable it with:
+
+- `OCR_TRACES_EXPORTER=otlp` (default `none`)
+- `OCR_TRACES_ENDPOINT` (OTLP/HTTP endpoint, default `http://jaeger:4318/v1/traces`)
+- `OCR_SERVICE_NAME` (service name on traces)
+
+The trace context travels with each job in the Redis stream as a `traceparent` field. The consumer continues the trace in a child span named `process job`. Span attributes contain only the message id, never document content.
+
+
 ## Related Projects
 
 - [ocr-engine](https://github.com/tettyrs-org/ocr-engine) - Python OCR extraction service (Tesseract, optional vision companion)
