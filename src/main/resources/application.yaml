@@ -83,6 +83,18 @@ quarkus:
           access-key-id: ${AWS_ACCESS_KEY_ID:}
           secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
 
+  # Tracing OpenTelemetry. Mati kecuali OCR_TRACES_EXPORTER=otlp. Endpoint OTLP/HTTP lengkap dengan /v1/traces.
+  otel:
+    service:
+      name: ${OTEL_SERVICE_NAME:ocr-api}
+    traces:
+      exporter: ${OCR_TRACES_EXPORTER:none}
+    exporter:
+      otlp:
+        traces:
+          endpoint: ${OCR_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+          protocol: http/protobuf
+
   smallrye-health:
     root-path: /q/health
 
