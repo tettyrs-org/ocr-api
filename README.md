@@ -552,7 +552,7 @@ Listed openly so they are not mistaken for solved problems:
 
 - [ocr-engine](https://github.com/tettyrs-org/ocr-engine) - Python OCR extraction service (Tesseract, optional vision companion)
 - [ms-ocr](https://github.com/tettyrs-org/ms-ocr) - Java correction and normalization service
-- Flutter web app and Backend-for-Frontend (BFF), not published as a separate repository
+- [ocr-app](https://github.com/tettyrs-org/ocr-app) - Flutter web app and Backend-for-Frontend (BFF)
 
 ## Support & Questions
 
