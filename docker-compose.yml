@@ -84,6 +84,8 @@ services:
       - INTERNAL_TOKEN=${INTERNAL_TOKEN}
     ports:
       - "127.0.0.1:8081:8080"
+      # Port management (/q/health, /q/metrics). Hanya localhost, tidak untuk jaringan publik.
+      - "127.0.0.1:9100:9100"
     depends_on:
       postgres:
         condition: service_healthy

@@ -544,7 +544,7 @@ Listed openly so they are not mistaken for solved problems:
 
 - **Authentication depends on Firebase.** The API verifies Firebase ID tokens and has no local login. Local tests need a real Firebase user or a token issued for that project.
 - **Rate limiting depends on Redis.** Sensitive endpoints reject requests when Redis is unavailable. General limits allow requests in that case, so the service keeps running.
-- **`GET /q/health` returned 404 on the host port (8081) in our local stack.** Use the Docker health status (`docker compose ps`) until this is checked.
+- **Health endpoints are on the management port, not the API port.** `GET /q/health`, `/q/health/live`, and `/q/health/ready` are served on port 9100 (`MANAGEMENT_PORT`), bound to localhost only in compose: `http://127.0.0.1:9100/q/health`. Port 8081 returns 404 for these paths by design, so the API port does not expose operational endpoints.
 - **Private keys stay local.** `src/main/resources/privateKey.pem` and `key_base64.txt` exist on developer machines. They are git-ignored and must never be committed.
 - **Processing is asynchronous.** An upload returns before OCR finishes. Total time depends on `ms-ocr` and `ocr-engine`. Vision on CPU can add 15 to 40 seconds for an ID card.
 
